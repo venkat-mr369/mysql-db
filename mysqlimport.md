@@ -8,10 +8,11 @@ mysql>show variables like 'secure_file_priv';
 ```
 staff.txt
 ------
-John	Doe	Manager	Y
+Iain Mackienze Director Y
+John david	Manager	Y
 Johny	Doe	DBA	Y
-Tom	Doe	Analyst	Y
-Tommy	Doe	Tester	Y
+Tom	refigenr	Analyst	Y
+Tommy	kalson	Tester	Y
 ------
 ```
 
