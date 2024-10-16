@@ -5,6 +5,10 @@
 mysqld --verbose --help
 mysqld --verbose --help | less
 ```
+to view all conf files in etc directory
+~~~
+sudo ls /etc/
+~~~
 
 ### ADD OPTION IN MY.CNF FILE
 ```sh
