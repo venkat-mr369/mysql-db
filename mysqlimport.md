@@ -5,6 +5,16 @@
 mysql>show variables like 'secure_file_priv';
 ```
 
+```
+staff.txt
+------
+John	Doe	Manager	Y
+Johny	Doe	DBA	Y
+Tom	Doe	Analyst	Y
+Tommy	Doe	Tester	Y
+------
+```
+
 ### COPY FILE
 ```sh
 sudo mv staff.txt /var/lib/mysql-files/staff.txt
