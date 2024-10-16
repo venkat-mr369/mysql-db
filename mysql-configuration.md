@@ -30,7 +30,8 @@ sudo systemctl restart mysqld
 ```sh
 sudo systemctl stop mysqld
 sudo strace mysqld
-sudo systemctl stop mysqld
+sudo systemctl start mysqld
+sudo lsof -u mysql
 ```
 
 ### OPTION FILE INCLUSION
