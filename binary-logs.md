@@ -12,3 +12,8 @@ show binlog events in 'binlog.000005';
 ~~~
 PURGE BINARY LOGS TO 'mysql-bin.000007';
 ~~~
+
+## Option file or Conf variables 
+~~~
+mysqld --verbose --help | grep binlog*
+~~~
