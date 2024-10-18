@@ -52,6 +52,12 @@ sudo vim /etc/percona/my.cnf
 datdir = /var/lib/myql/prod
 sudo systemctl start mysqld
 ```
+Suppose your are moving the files with root user make sure provide permissions to mysql user 
+~~~
+root# chmod +R mysql:mysql /var/lib/mysql/prod
+~~~
+
+
 
 ### BINARY LOG FILES
 ```sql
