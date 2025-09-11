@@ -15,7 +15,7 @@
 
 4. **What parameter group changes would you make for a high-write workload?**
    - Solution: Tune `innodb_buffer_pool_size`, `max_connections`, `innodb_flush_log_at_trx_commit`, and enable slow query logging.
-   - [innodb_flush_log_at_trx_commit])(innodb_flush_log_at_trx_commit.md)
+   - [innodb_flush_log_at_trx_commit](innodb_flush_log_at_trx_commit.md)
 
 5. **How would you automate point-in-time recovery for an RDS instance?**
    - Solution: Configure automated backups and use the AWS Console or CLI to restore to a specific time by creating a new instance from backup snapshots.
