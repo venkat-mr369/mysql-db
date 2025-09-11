@@ -41,4 +41,3 @@
 
 ---
 
-👉 Do you also want me to prepare a **Word/PowerPoint-style architecture diagram** (Visio-like with layers: Storage → Replication → Backup → Cloud → Use Cases) so you can use it directly in **presentations**?
