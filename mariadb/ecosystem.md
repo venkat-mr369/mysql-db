@@ -1,5 +1,8 @@
 **MariaDB vs MySQL ecosystem** with features
 
+<img width="2210" height="1322" alt="image" src="https://github.com/user-attachments/assets/1827393c-ff18-40e3-bd9c-3e1aa5fb06ed" />
+
+
 ---
 
 ### ✅ MariaDB Ecosystem
