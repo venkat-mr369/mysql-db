@@ -1,0 +1,168 @@
+Percona xtrabackup Backups Steps :-
+
+mysql> CREATE USER 'bkp'@'localhost' IDENTIFIED BY 'bkp123';
+mysql> GRANT RELOAD, LOCK TABLES, PROCESS, REPLICATION CLIENT ,SUPER ON *.* TO 'bkp'@'localhost';
+mysql> FLUSH PRIVILEGES;
+
+SUPER Privilege - Optional for Full Backup
+		- For Incremental backup, This privilege is Mandatory
+
+Exersice:-
+1, Full Backup - all 3 databases data will available
+2, Create a sample database, Create a table
+3, Take a 1st incremental backup
+4, Do Some transactions, insert couple of (4) records
+5, Take a 2nd incremental backup
+6, Do Some transactions, insert couple of (4) records
+-----------------Crash the server , manually
+7, Restore all backups
+8, finally your result , need to get into the table with 8 records
+
+Backup Method :- 
+Create a proper folders before taking the backups 
+mkdir -p /root/backups/full
+mkdir -p /root/backups/inc1
+mkdir -p /root/backups/inc2
+
+--for binary log lSN Number --binlog-info=ON 
+#xtrabackup --user=bkp --password=bkp123 --backup --target-dir=/root/backups/full
+[or]
+#xtrabackup --user=bkp --password=bkp123 --binlog-info=ON --backup --target-dir=/root/backups/full
+#cd /root/backups/full
+#root/backups/full# cat xtrabackup_info 
+uuid = 005d81d7-f0d8-11e9-87cc-02924727f25c
+name =
+tool_name = xtrabackup [ Utlitiy Name ]
+tool_command = --user=bkp --password=... --backup --target-dir=/root/backups/full
+tool_version = 2.4.15
+ibbackup_version = 2.4.15
+server_version = 5.7.27-30
+start_time = 2019-10-17 12:16:50
+end_time = 2019-10-17 12:16:52
+lock_time = 0
+binlog_pos =
+innodb_from_lsn = 0 [ log Sequence Number ]
+innodb_to_lsn = 3258748
+partial = N
+incremental = N [ Full Backup ]
+format = file
+compact = N
+compressed = N
+encrypted = N
+
+
+Do Some transactions in a datafull For Example:- Insert Some Records in a table
+Create database sample;
+use sample;
+
+Create table tuition(
+   tutorial_title VARCHAR(100) NOT NULL PRIMARY KEY,
+   tutorial_author VARCHAR(40) NOT NULL,
+   submission_date DATE);
+
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("Learn SQL Server", "Sarath", NOW());
+
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("Learn Dental Precautions", "Sairam", NOW());
+
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("Learn MySQL", "SarSush", NOW());
+
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("MongoDB", "Tracy", '2007-05-06');
+
+xtrabackup --user=bkp --password=bkp123 --backup --target-dir=/root/backups/inc1 --incremental-basedir=/root/backups/full
+
+Again do Some transactions in a datafull For Example:- Insert Some Records in a table
+Only 4 Records
+use sample;
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("Learn Oracle", "Ask Tom", NOW());
+
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("JAVA Tutorial", "Hari", '2007-05-06');
+
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("SQL Server DBA", "Sarath", NOW());
+
+INSERT INTO tuition (tutorial_title, tutorial_author, submission_date)
+     VALUES
+     ("SQL Server DBA 2012","Sarath", NOW());
+
+xtrabackup --user=bkp --password=bkp123 --backup --binlog-info=ON --target-dir=/root/backups/inc2 --incremental-basedir=/root/backups/inc1
+
+Manual Crash the server
+#rm -rf /var/lib/mysql
+
+Preparing for restore :- 
+Preparing Incremental Backups to restore
+
+xtrabackup --prepare --apply-log-only --target-dir=/root/backups/full
+xtrabackup --prepare --apply-log-only --target-dir=/root/backups/full --incremental-dir=/root/backups/inc1
+xtrabackup --prepare --target-dir=/root/backups/full --incremental-dir=/root/backups/inc2
+
+
+Restore method:-
+root@sarath-dbacentre:/var/lib/#mkdir mysql
+root@sarath-dbacentre:/var/lib/mysql# xtrabackup --copy-back --target-dir=/root/backups/full
+xtrabackup version 2.4.9 fulld on MySQL server 5.7.13 Linux (x86_64) (revision id: a467167cdd4)
+171225 19:58:59 [01] Copying ib_logfile0 to /var/lib/percona-server/ib_logfile0
+171225 19:58:59 [01]        ...done
+171225 19:58:59 [01] Copying ib_logfile1 to /var/lib/percona-server/ib_logfile1
+171225 19:59:00 [01]        ...done
+171225 19:59:00 [01] Copying ibdata1 to /var/lib/percona-server/ibdata1
+171225 19:59:00 [01]        ...done
+171225 19:59:01 [01] Copying ./mysql/servers.MYI to /var/lib/percona-server/mysql/servers.MYI
+171225 19:59:01 [01]        ...done
+171225 19:59:01 [01] Copying ./mysql/event.frm to /var/lib/percona-server/mysql/event.frm
+171225 19:59:01 [01]        ...done
+171225 19:59:01 [01] Copying ./mysql/time_zone_transition.frm to /var/lib/percona-server/mysql/time_zone_transition.frm
+171225 19:59:01 [01]        ...done
+171225 19:59:01 [01] Copying ./mysql/general_log.frm to /var/lib/percona-server/mysql/general_log.frm
+171225 19:59:01 [01]        ...done
+171225 19:59:01 [01] Copying ./mysql/proxies_priv.MYD to /var/lib/percona-server/mysql/proxies_priv.MYD
+171225 19:59:01 [01]        ...done
+171225 19:59:01 completed OK!
+
+root@sarath-dbacentre:/var/lib/percona-server# rsync -avrP /root/backups/full /var/lib/mysql/
+sending incremental file list
+full/
+full/backup-my.cnf
+            418 100%    0.00kB/s    0:00:00 (xfr#1, to-chk=241/243)
+full/ib_logfile0
+     50,331,648 100%   91.95MB/s    0:00:00 (xfr#2, to-chk=240/243)
+full/ib_logfile1
+     50,331,648 100%   29.20MB/s    0:00:01 (xfr#3, to-chk=239/243)
+full/ibdata1
+     12,582,912 100%   20.65MB/s    0:00:00 (xfr#4, to-chk=238/243)
+full/ibtmp1
+     12,582,912 100%    7.98MB/s    0:00:01 (xfr#5, to-chk=237/243)
+full/xtrabackup_checkpoints
+            113 100%    0.49kB/s    0:00:00 (xfr#6, to-chk=236/243)
+full/xtrabackup_info
+            499 100%    1.66kB/s    0:00:00 (xfr#7, to-chk=235/243)
+         65,536 100%   89.26kB/s    0:00:00 (xfr#236, to-chk=2/243)
+full/test/test.frm
+          8,560 100%   11.66kB/s    0:00:00 (xfr#237, to-chk=1/243)
+full/test/test.ibd
+         65,536 100%   89.14kB/s    0:00:00 (xfr#238, to-chk=0/243)
+
+sent 137,172,587 bytes  received 4,578 bytes  39,193,475.71 bytes/sec
+total size is 137,120,647  speedup is 1.00
+
+
+root@sarath-dbacentre:/var/lib/mysql# chown -R mysql:mysql /var/lib/mysql/
+root@sarath-dbacentre:/var/lib/mysql# service mysql start
+root@sarath-dbacentre:/var/lib/mysql# service mysql status
+
+select table_name,table_rows from information_schema.tables where table_schema IN('test','test1','sample');
+
+

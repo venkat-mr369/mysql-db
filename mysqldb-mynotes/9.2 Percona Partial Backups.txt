@@ -1,0 +1,24 @@
+Partial Backups
+
+---Table backup and 1 database backup 
+innobackupex -u bkp -pbkp123 --databases="world" /root/backups/par
+xtrabackup -u bkp -pbkp123 --databases="world" /root/backups/par
+
+---Taking 2 databases backup
+innobackupex -u bkp -pbkp123 --databases="classicmodels dbacentre" /root/backups/par1
+
+Restoring 
+xtrabackup --prepare --target-dir=/root/backups/par/
+xtrabackup -u bkp -pbkp123 --copy-back --target-dir=/root/backups/par/
+
+
+--openssl rand -base64 24
+--Full backup with compression + Encryption
+xtrabackup --user=bkp --password=bkp123 --backup --compress --target-dir=/root/backups/full-encpt-com --encrypt=AES256 --encrypt-key="Xr+I0owCB2Ycn49ScU9EF5KqyUCV0EQw"
+
+--Incremental backup with compression + Encryption
+xtrabackup --user=bkp --password=bkp123 --backup --compress --encrypt=AES256 --encrypt-key="Xr+I0owCB2Ycn49ScU9EF5KqyUCV0EQw" --target-dir=/root/backups/encpt-com-inc1 --incremental-basedir=/root/backups/full-encpt-com
+
+
+xtrabackup --decompress --decrypt=AES256 --encrypt-key="Xr+I0owCB2Ycn49ScU9EF5KqyUCV0EQw" --target-dir=/root/backups/full-encpt-com
+

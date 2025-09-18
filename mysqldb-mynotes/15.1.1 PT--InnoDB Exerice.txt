@@ -1,0 +1,179 @@
+﻿we need some downtime for change below parameters !!
+CR - ( Service Based -TCS,Cognizant,Accenture,Infosys ..etc ) - Change Request
+RFC , RTI - ( Produced Based Amazon,google,yahoo,flipkart,Iron Mountain ) 
+----------------------------------------
+50G - 300GB Data
+100G- 600GB
+12 redofiles - 200MB
+
+1)Change ibdata default location to new location /idata
+Default Size of ibdata - 12M
+2)Move redofiles to new Location /mysqlredos
+Default Size of redolog - 50M
+3)How many redo files - 2 , increasing the redolog file count to 6
+4)Resizing the redo logs
+5)add one more ibdata file & Increased the size
+6)Turn off innodb Storage Engine to Myisam Engine
+7)what is use of innodb_file_per_table ?
+
+----------------------------------------------------
+Task 1 :- Change old location to new location
+1,Shutdown server
+---verify the location 
+show variables like 'innodb_data_home_dir';
+2,update my.cnf , add new location
+	[mysqld] 
+	innodb_data_home_dir = /var/lib/mysql/idata
+3,copy the files to new location
+	root@ip-172-31-34-92:/var/lib/mysql# mv ibdata1 idata/
+4, verify the owner permissions , Give proper permissions for that new path
+	chown -R mysql:mysql /var/lib/mysql/idata
+5,Restart server / Server start
+6,mysql> show variables like 'innodb_data_home_dir';
+
+--------------------------------------------------------------------------------------------
+
+Task 2 :- add 2 files 
+1,Shutdown server
+2,update my.cnf , adding one more ibdata file 	
+	[mysqld]
+	innodb_data_file_path=ibdata1:76M;ibdata2:12M:autoextend
+	##innodb_data_file_path=ibdata1:12M;ibdata2:12M:autoextend:max:500M
+*root@ip-172-31-34-92:/var/lib/mysql# cp ibdata1 ibdata2
+4, verify the owner permissions , Give proper permissions for that new path
+	chown -R mysql:mysql /var/lib/mysql/idata/ibdata2
+5,restart server - Server start
+service mysql restart
+6,mysql> show variables like 'innodb_data_file_path';
+
+
+CR:- Increase the log files with 4 and change the location.
+
+Task 3:- Move to new Location
+1,shutdown server
+mysql> show variables like 'innodb_log_group_home_dir';
+2,update my.cnf , add new location
+	[mysqld] 
+	innodb_log_group_home_dir = /var/lib/mysql/mysqlredos
+create a folder called mysqlredos
+3,copy the files to new location [ Optional ]
+	root@ip-172-31-34-92:/var/lib/mysql# mv ib_logfile1 ib_logfile0 mysqlredos/
+4,verify the owner permissions , Give proper permissions for that new path
+	chown -R mysql:mysql /var/lib/mysql/mysqlredos
+5,Restart server / Server start
+	service mysql restart
+6,mysql> show variables like 'innodb_log_group_home_dir';
+
+Tast 5:- increasing the file count
+1,shutdown server
+2,update my.cnf , with additional 6 files
+	[mysqld] 
+	innodb_log_files_in_group = 6
+3,Restart server / Server start
+4,mysql> show variables like 'innodb_log_files_in_group';
+
+Task 6:- Resizing the redo logs
+1,shutdown server
+2,update my.cnf , with new size value
+innodb_log_file_size = 70M
+3,Restart server / Server start
+3,show variables like 'Innodb_log_file_size';
+
+Task 7:-
+CR:- Turn off innodb Storage Engine to Myisam Engine
+1,Shutdown Server
+2,update my.cndf 
+	[mysqld]
+	skip-innodb
+	default-storage-engine=MyISAM
+3,Restart server / Server start
+4,show engines;
+
+-------------------
+
+Task 
+switch of file per table , Not Recommeneded 
+Mysql> show variables like 'innodb_file_per_table';
+
+SELECT TABLESPACE_NAME,FILE_NAME FROM INFORMATION_SCHEMA.FILES;
+---Dynamic Parameter , if you restarted the server changes will be disappear 
+set global innodb_file_per_table=off;
+
+add this line to the [mysqld] section of my.cnf, for Permanent 
+service mysql stop
+[mysqld]
+innodb_file_per_table=0
+service mysql start
+Mysql> show variables like 'innodb_file_per_table';
+
+
+----mysql server is their any startup options and shutdown options ?
+
+stop server [ Default ] -- Example Oracle DB - shutdown immediate;
+
+shutdown normal;
+
+start the server, output will recorded in error.log
+
+Dynamic Parameter
+------------------------------------------------------------------------
+mysql> show variables like 'innodb_fast_shutdown';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| innodb_fast_shutdown | 1     |
++----------------------+-------+
+
+innodb_fast_shutdown - The InnoDB shutdown mode. 
+
+By default, the value is 1, which causes a “fast” shutdown (the normal type of shutdown). 
+
+If the value is 0, InnoDB does a full purge [removal] and an insert buffer merge before a shutdown. 
+These operations can take minutes or even hours in extreme cases. 
+
+If the value is 2, InnoDB will just flush its logs and then shut down cold, as if MySQL had crashed; 
+no committed transaction will be lost, but crash recovery will be made at the next startup.
+
+mysql> show variables like 'innodb_fast_shutdown';
+
+
+CR:- Change the value innodb_fast_shutdown to 2.
+
+With Out Restart
+mysql> set global innodb_fast_shutdown=2;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> show variables like 'innodb_fast_shutdown';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| innodb_fast_shutdown | 2     |
++----------------------+-------+
+1 row in set (0.00 sec)
+
+update in your my.cnf with value 2
+
+when ever your server restart, automatically it will update
+
+
+
+
+
+
+
+
+	
+
+	
+
+
+
+
+
+
+
+
+
+
+
+

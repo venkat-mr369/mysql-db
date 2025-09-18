@@ -1,0 +1,123 @@
+Multi Master Replication
+
+192.168.26.135  - MultiMaster 1 
+192.168.26.134  - MultiMaster 2 
+192.168.26.136  - Slave  
+
+enable binary log on master1 and master2
+enable binary log 
+server id = 1
+server id = 2
+server id = 3
+bind address = 0.0.0.0
+
+Master-1 Setup:-
+
+Create a New user for Master-1 with slave ip_address
+
+mysql> create user 'multi'@'192.168.56.200' identified by 'pwd123';
+
+Give the permission for this user.
+
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'multi'@'192.168.56.200';
+
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000006 |      154 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+1 row in set (0.00 sec)
+
+Master-2 Setup:
+
+Create a New user for Master-2 with slave ip_address
+
+mysql> create user 'multi'@'192.168.56.200' identified by 'pwd123';
+
+Give the permission for this user.
+
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'multi'@'192.168.56.200';
+
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000006 |      154 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+On Slave Server
+
+stop slave;
+
+set global master_info_repository='TABLE';
+
+set global relay_log_info_repository='TABLE';
+
+Or
+
+(Better way to put this option in cnf file)
+
+master_info_repository = TABLE
+relay_log_info_repository = TABLE
+
+Then restart the slave ,Restore the master-1 & master-2 Bacup file’s in slave side.
+
+--These both should be executed on slave server
+Master 1 (master_host master1 ipaddress)
+CHANGE MASTER TO master_host='192.168.56.198', master_port=3306, master_user='multi', master_password='pwd123', master_log_file='mysql-bin.000001', master_log_pos=154 for channel 'multi_master1_punedb';
+
+Master 2 (master_host master2 ipaddress)
+CHANGE MASTER TO master_host='192.168.56.199', master_port=3306, master_user='multi', master_password='pwd123', master_log_file='mysql-bin.000001',master_log_pos=154 for channel 'multi_master2_chennaidb';
+
+mysql>show slave status\G
+mysql> start slave for channel 'Multi_master1_punedb';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> start slave for channel 'Multi_master2_blrdb';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> show slave status for channel 'multi_master1_punedb'\G
+mysql> show slave status for channel 'multi_master2_blrdb'\G
+
+mysql> stop slave for channel 'multi_master1_punedb';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> stop slave for channel 'multi_master2_blrdb';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+-------
+
+Monitoring the Replication Channels .
+
+    select * from replication_connection_status\G
+    It will shows the channel name , source_UUID , thread_ID .
+    It makes monitoring more flexible as we can just parse the SQL commands.
+
+mysql>  select * from performance_schema.replication_connection_status\G
+*************************** 1. row ***************************
+             CHANNEL_NAME: multi_master1
+               GROUP_NAME: 
+              SOURCE_UUID: dc257fc5-d63b-11ea-876e-000c29114b71
+                THREAD_ID: 25
+            SERVICE_STATE: ON
+COUNT_RECEIVED_HEARTBEATS: 40
+ LAST_HEARTBEAT_TIMESTAMP: 2020-08-04 16:34:15
+ RECEIVED_TRANSACTION_SET: 
+        LAST_ERROR_NUMBER: 0
+       LAST_ERROR_MESSAGE: 
+     LAST_ERROR_TIMESTAMP: 0000-00-00 00:00:00
+*************************** 2. row ***************************
+             CHANNEL_NAME: multi_master2
+               GROUP_NAME: 
+              SOURCE_UUID: eb3499e9-d63b-11ea-8064-000c29687d52
+                THREAD_ID: 35
+            SERVICE_STATE: ON
+COUNT_RECEIVED_HEARTBEATS: 26
+ LAST_HEARTBEAT_TIMESTAMP: 2020-08-04 16:34:16
+ RECEIVED_TRANSACTION_SET: 
+        LAST_ERROR_NUMBER: 0
+       LAST_ERROR_MESSAGE: 
+     LAST_ERROR_TIMESTAMP: 0000-00-00 00:00:00
+2 rows in set (0.00 sec)
+

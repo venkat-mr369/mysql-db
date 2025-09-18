@@ -1,0 +1,738 @@
+https://www.youtube.com/watch?v=e61Hf5Z5Gec
+Types of Indexes
+innodb vs myisam
+B-tree Indexes
+
+Advantages of B-Tree Index
+
+B-Tree Index speeds up data access
+Storage engine traverses from root node to leaf node with the help of pointers
+Increase performance of following query patterns:
+Full Value (e.g. ‘DBA CENTRE’, ‘monesh chandra’)
+Leftmost Value or Column Prefix (e.g. ‘DBA’ from ‘DBACENTRE’, ‘monesh’ from ‘monesh chandra’)
+Range of Value (e.g. 1 to 99, Aaron to Fritz, Aaron to Kei%)
+
+B-Tree structure helps ORDER BY clause to increase the performance
+Clustered Indexes
+Seconday Index B-Tree [ Non Clustered Index ]
+An Index which is not clustered index is called as a secondary index
+Secondary Index in InnoDB does not store actual data but only contains the pointer to the data
+If there is a clustered index on the table
+Secondary Index will contain the pointer to clustered index
+If there is no clustered index on the table
+Secondary Index will contain the row pointer
+
+Hash Indexes
+FirstName 	LastName
+Aaron 		Skonnard
+Fritz 		Onion
+Keith		Brown
+Mike 		Woodring
+Jeff 		Ross
+Megan 		Russell
+SELECT FirstName, LastName FROM TableName WHERE FirstName= 'Jeff'
+
+Building Hash Index 
+FirstName LastName  HashFn() Value
+Aaron Skonnard      1254 Pointer to row 1
+Fritz Onion         5487 Pointer to row 2
+Keith Brown         6587 Pointer to row 3
+Mike  Woodring      6842 Pointer to row 4
+Jeff  Ross          4786 Pointer to row 5
+Megan Russell       9587 Pointer to row 6
+
+Other Index Types
+
+Spatial Indexes
+	MyISAM supports spatial indexes
+	MySQL GIS support is not exhaustive
+
+Full Text Indexes
+Just like search engines
+Finds keywords in the text
+They are MATCH AGAINST operations (not WHERE operation)
+
+Other Types
+	TokuDB–Fractal Tree Indexes
+	ScaleDB–Patricia tries
+	InfiniDB–Special Logic
+
+Outline for Demo
+	Effectiveness of Index
+	Basics of Index
+	Order of Columns in Index
+	Optimizing for OR condition
+	Optimizing for AND condition
+	Implementing Cover Index
+	Clustered Index and Non-Clustered Index
+
+Effectiveness of Index
+	Find rows matching a WHERE clause
+	Eliminate rows by opting for the MOST selective Index
+	Retrieve rows from other table while joining multiple tables
+	Finding MIN() or MAX() value
+	Sort or Group Table
+	Reduce I/O bottleneck by using Covering Index
+
+------- Exercise - 1
+
+show index from film from sakila;
+
+show index from film
+
+select * from information_schema.statistics where table_name = 'film';
+select TABLE_NAME,INDEX_NAME,INDEX_SCHEMA,NULLABLE,INDEX_TYPE,SEQ_IN_INDEX  from information_schema.statistics where table_name = 'film';
+
+create index idx_film_length on film (length);
+
+--- Query using Index
+select film_id,length from film where length = 100;
+
+--- Explain index usage
+explain select film_id,length from film 
+where length = 100;
+
+--- Dropping Index 
+drop index idx_film_length on film;
+
+
+------- Exercise - 2
+
+show index from film from sakila;
+
+show index from film
+
+select * from information_schema.statistics where table_name = 'film';
+
+create index idx_film_length on film (length);
+
+MySQL Disallowing Descending Order / Sort Order and removed in next coming versions, 
+wasting space and duplicate index will repeating
+
+Descending order also will work like ascending only internally.
+create index idx_film_length_desc on film (length DESC);
+
+--- Query using Index
+select film_id,length from film where length = 100;
+
+--- Explain index usage
+explain select film_id,length from film 
+where length = 100;
+
+--- Dropping Index 
+drop index idx_film_length on film;
+drop index idx_film_length_desc on film;
+
+------- Exercise - 3
+select title,rental_duration,length from film
+where rental_duration = 6 or length = 100;
+
+explain select title,rental_duration,length from film
+where rental_duration = 6 or length = 100;
+
+--creating index
+create index idx_film_length_duration on film (rental_duration)
+
+--again execute same query
+explain select title,rental_duration,length from film
+where rental_duration = 6 or length = 100;
+
+mysql> explain select title,rental_duration,length from film where rental_duration = 6 or length = 100;
++----+-------------+-------+------------+------+--------------------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys            | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+--------------------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | film  | NULL       | ALL  | idx_film_length_duration | NULL | NULL    | NULL | 1000 |    28.00 | Using where |
++----+-------------+-------+------------+------+--------------------------+------+---------+------+------+----------+-------------+
+
+Key = Null 
+possible_keys (idx_film_length_duration) index is considering but , But this not optimal and its is not using 
+
+again create a index on length
+---create index 
+create index idx_film_length on film (length);
+
+explain select title,rental_duration,length from film where rental_duration = 6 or length = 100;
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+--------------------------------------------------------------------+
+| id | select_type | table | partitions | type        | possible_keys                            | key                                      | key_len | ref  | rows | filtered | Extra                                                              |
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+--------------------------------------------------------------------+
+|  1 | SIMPLE      | film  | NULL       | index_merge | idx_film_length_duration,idx_film_length | idx_film_length_duration,idx_film_length | 1,3     | NULL |  224 |   100.00 | Using union(idx_film_length_duration,idx_film_length); Using where |
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+--------------------------------------------------------------------+
+
+again create a index on 2 columns
+---create index 
+create index idx_film_length_rental_duration on film (length,rental_duration);
+
+--Dropping Index
+drop index idx_film_length_rental_duration on film;
+drop index idx_film_length_duration on film;
+drop index idx_film_length on film;
+drop index idx_film_rental_duration on film;
+
+--- Exercise - 4 
+
+---show index from film from sakila;
+explain select title,rental_duration,length from film where rental_duration = 6 or length = 100;
+
+---create four indexes 
+create index idx_film_rental_duration on film (rental_duration);
+create index idx_film_length on film (length);
+create index idx_film_rental_duration_length on film(rental_duration, length);
+create index idx_film_length_rental_duration on film(length,rental_duration);
+
+--SELECT Statement
+explain select title,rental_duration,length from film 
+where rental_duration = 6 or length = 100;
+
+explain select title,rental_duration,length from film 
+where  length = 100 or  rental_duration = 6;
+
+Drop index idx_film_length on film;
+Drop index idx_film_rental_duration on film;
+
+mysql> explain select title,rental_duration,length from film where rental_duration = 6 or length = 100;
++----+-------------+-------+------------+------+-----------------------------------------------------------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys                                                   | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+-----------------------------------------------------------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | film  | NULL       | ALL  | idx_film_rental_duration_length,idx_film_length_rental_duration | NULL | NULL    | NULL | 1000 |    20.57 | Using where |
++----+-------------+-------+------------+------+-----------------------------------------------------------------+------+---------+------+------+----------+-------------+
+
+--mysql will go for simple table scan and retrives but in this example we have possible indexes are 
+their but its not using any of the index,Key column shows NULL. means it going simple table scan
+
+
+explain
+select title,rental_duration,length 
+from film
+where length = 100
+union 
+select title, rental_duration, length
+from film
+where rental_duration = 6;
+
++----+--------------+------------+------------+------+---------------------------------+---------------------------------+---------+-------+------+----------+-----------------+
+| id | select_type  | table      | partitions | type | possible_keys                   | key                             | key_len | ref   | rows | filtered | Extra           |
++----+--------------+------------+------------+------+---------------------------------+---------------------------------+---------+-------+------+----------+-----------------+
+|  1 | PRIMARY      | film       | NULL       | ref  | idx_film_length_rental_duration | idx_film_length_rental_duration | 3       | const |   12 |   100.00 | NULL            |
+|  2 | UNION        | film       | NULL       | ref  | idx_film_rental_duration_length | idx_film_rental_duration_length | 1       | const |  212 |   100.00 | NULL            |
+| NULL | UNION RESULT | <union1,2> | NULL       | ALL  | NULL                            | NULL                            | NULL    | NULL  | NULL |     NULL | Using temporary |
++----+--------------+------------+------------+------+---------------------------------+---------------------------------+---------+-------+------+----------+-----------------+
+3 rows in set, 1 warning (0.00 sec)
+
+--If your are using OR operator behalf of that you can use union Operator for better performance.
+create two indexes and verify once 
+
+create index idx_film_rental_duration on film (rental_duration);
+create index idx_film_length on film (length);
+
+mysql> explain select title,rental_duration,length from film where length = 100
+       union select title, rental_duration, length
+       from film
+       where rental_duration = 6;
++----+--------------+------------+------------+------+---------------------------------+---------------------------------+---------+-------+------+----------+-----------------+
+| id | select_type  | table      | partitions | type | possible_keys                   | key                             | key_len | ref   | rows | filtered | Extra           |
++----+--------------+------------+------------+------+---------------------------------+---------------------------------+---------+-------+------+----------+-----------------+
+|  1 | PRIMARY      | film       | NULL       | ref  | idx_film_length_rental_duration | idx_film_length_rental_duration | 3       | const |   12 |   100.00 | NULL            |
+|  2 | UNION        | film       | NULL       | ref  | idx_film_rental_duration_length | idx_film_rental_duration_length | 1       | const |  212 |   100.00 | NULL            |
+| NULL | UNION RESULT | <union1,2> | NULL       | ALL  | NULL                            | NULL                            | NULL    | NULL  | NULL |     NULL | Using temporary |
++----+--------------+------------+------------+------+---------------------------------+---------------------------------+---------+-------+------+----------+-----------------+
+3 rows in set, 1 warning (0.00 sec)
+
+mean to say before what we created two indexes (idx_film_rental_duration,idx_film_length) not effected 
+
+drop index idx_film_rental_duration on film;
+drop index idx_film_length on film;
+
+
+--- Exercise 6 ( AND Operator )
+mysql> show index from film from sakila;
++-------+------------+-----------------------------+--------------+----------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| Table | Non_unique | Key_name                    | Seq_in_index | Column_name          | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |
++-------+------------+-----------------------------+--------------+----------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| film  |          0 | PRIMARY                     |            1 | film_id              | A         |        1000 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| film  |          1 | idx_title                   |            1 | title                | A         |        1000 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| film  |          1 | idx_fk_language_id          |            1 | language_id          | A         |           1 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
+| film  |          1 | idx_fk_original_language_id |            1 | original_language_id | A         |           1 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |
++-------+------------+-----------------------------+--------------+----------------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+4 rows in set (0.33 sec)
+
+explain select title,rental_duration,length from film 
+where rental_duration = 6 AND length = 100;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | film  | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 1000 |     1.00 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+
+-- Create Index on rental_duration
+create index idx_film_rental_duration on film (rental_duration);
+
+-- Now again try
+explain select title,rental_duration,length from film 
+where rental_duration = 6 AND length = 100;
++----+-------------+-------+------------+------+--------------------------+--------------------------+---------+-------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys            | key                      | key_len | ref   | rows | filtered | Extra       |
++----+-------------+-------+------------+------+--------------------------+--------------------------+---------+-------+------+----------+-------------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_rental_duration | idx_film_rental_duration | 1       | const |  212 |    10.00 | Using where |
++----+-------------+-------+------------+------+--------------------------+--------------------------+---------+-------+------+----------+-------------+
+-- its using idx_film_rental_duration index, now create a index on (length) columnm, try it again
+
+create index idx_film_length on film (length);
+
+explain select title,rental_duration,length from film 
+where rental_duration = 6 AND length = 100;
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+------------------------------------------------------------------------+
+| id | select_type | table | partitions | type        | possible_keys                            | key                                      | key_len | ref  | rows | filtered | Extra                                                                  |
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+------------------------------------------------------------------------+
+|  1 | SIMPLE      | film  | NULL       | index_merge | idx_film_rental_duration,idx_film_length | idx_film_length,idx_film_rental_duration | 3,1     | NULL |    2 |   100.00 | Using intersect(idx_film_length,idx_film_rental_duration); Using where |
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+------------------------------------------------------------------------+
+-- its using both indexes with intersected and merged 
+
+--Now create index on both columns - rental_duration and length
+create index idx_film_rental_duration_length on film(rental_duration, length);
+
+explain select title,rental_duration,length from film 
+where rental_duration = 6 AND length = 100;
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys                                                            | key                             | key_len | ref         | rows | filtered | Extra |
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_rental_duration,idx_film_length,idx_film_rental_duration_length | idx_film_rental_duration_length | 4       | const,const |    4 |   100.00 | NULL  |
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+1 row in set, 1 warning (0.10 sec)
+-- its using idx_film_rental_duration_length exactly created on both columns.
+
+
+--Now create index on both columns - length and rental_duration
+create index idx_film_length_rental_duration on film(length,rental_duration);
+
+explain select title,rental_duration,length from film 
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys                                                                                            | key                             | key_len | ref         | rows | filtered | Extra |
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_rental_duration,idx_film_length,idx_film_rental_duration_length,idx_film_length_rental_duration | idx_film_rental_duration_length | 4       | const,const |    4 |   100.00 | NULL  |
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+1 row in set, 1 warning (0.11 sec)
+---this index is  not using 
+
+--swaping the length & rental_duration
+explain select title,rental_duration,length from film 
+where length = 100  and rental_duration = 6;
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys                                                                                            | key                             | key_len | ref         | rows | filtered | Extra |
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_rental_duration,idx_film_length,idx_film_rental_duration_length,idx_film_length_rental_duration | idx_film_rental_duration_length | 4       | const,const |    4 |   100.00 | NULL  |
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+Notice that this index idx_film_rental_duration_length is using,this index is no use idx_film_length_rental_duration
+
+drop index idx_film_length_rental_duration on film;
+drop index idx_film_rental_duration_length on film;
+drop index idx_film_length on film;
+drop index idx_film_rental_duration on film;
+
+------- Exercise 7
+
+Covering Index
+It improves the performance and improves IO as well.
+which are using all columns in where clause's and using all select clause's usually called as covering index.
+
+explain select title,rental_duration,length 
+from film 
+where rental_duration = 6 or length = 100;
+
+--Creating Cover Index
+Create index idx_film_rental_duration on film(rental_duration);
+Create index idx_film_length on film(length);
+Create index idx_film_length_rental_duration on film(length,rental_duration);
+
+--again try and see the result
+explain select title,rental_duration,length 
+from film 
+where rental_duration = 6 and length = 100;
+
+--Create cover index
+CREATE INDEX idx_film_length_rental_duration_title on film (length,rental_duration,title);
+
+--again try and see the result
+explain select title,rental_duration,length 
+from film 
+where rental_duration = 6 and length = 100;
+
+--now try this one, you can notice the result
+explain
+select title,rental_duration,length 
+from film
+where length = 100
+union 
+select title, rental_duration, length
+from film
+where rental_duration = 6;
+
+
+explain select * from film where rental_duration = 6 and length = 100;
+
+------- Exercise 8 ------------------------
+Clustered Index
+we will see the example of ordey by class as well performance 
+
+create table testtable
+ID int unsigned not null auto_increment,
+Firstname varchar(64) NOT NULL DEFAULT '',
+Lastname varchar(64) NOT NULL DEFAULT '',
+Fullname varchar(128) NOT NULL DEFAULT '',
+PRIMARY KEY (ID),
+KEY ix_testtable_fn_ln(Firstname, Lastname));
+
+
+CREATE TABLE employee
+(
+ID int NOT NULL AUTO_INCREMENT,
+FirstName varchar(255) NOT NULL,
+LastName varchar(255),
+FullName varchar(255),
+Address varchar(255),
+City varchar(255),
+PRIMARY KEY (ID),
+KEY idx_employee_table_first_last(Firstname, Lastname));
+
+insert into employee (firstname,lastname,fullname,address,city) values ('sai','kumar','yv sai ram kumar','Mogapair','Chennai');
+insert into employee (firstname,lastname,fullname,address,city) values ('CHRIS','TIM','Tim Chris','Calendar house','EDENBURGH');
+insert into employee (firstname,lastname,fullname,address,city) values ('Reffiger','Tom','Tom Reffiger','emmaus school road','Allentown');
+insert into employee (firstname,lastname,fullname,address,city) values ('Narayanswami','Viji','Viji Narayana swami','emmaus school road','EMMAUS');
+insert into employee (firstname,lastname,fullname,address,city) values ('devi','chowdary','C Devi Chowdary','40#,KR Puram','Bangalore');
+insert into employee (firstname,lastname,fullname,address,city) values ('Janvika','sarath','Janvika Sarath','marathali','Bangalore');
+insert into employee (firstname,lastname,fullname,address,city) values ('Vijay','Sankar','k vijaya Sankar','KT Road','tirupati');
+insert into employee (firstname,lastname,fullname,address,city) values ('jaanu','chowdary','C jaanu Chowdary','Gandhi road','chittor');
+insert into employee (firstname,lastname,fullname,address,city) values ('manju','chowdary','C manju reddy','Tamabaram','Chennai');
+insert into employee (firstname,lastname,fullname,address,city) values ('meena','kumari','D Meena Kumari reddy','Crompet','Chennai');
+insert into employee (firstname,lastname,fullname,address,city) values ('rajendra','prasad','DR Rajendra Prasad','Jublie Hills','Hyderabad');
+insert into employee (firstname,lastname,fullname,address,city) values ('sravya','chowdary','K sravya chowdary','Jublie Hills','Hyderabad');
+insert into employee (firstname,lastname,fullname,address,city) values ('ramya','erra','k ramya erra ','Banjara Hills','Hyderabad');
+insert into employee (firstname,lastname,fullname,address,city) values ('shilpa','rai','s shilpa pratap rai','SR Nagar','Hyderabad');
+insert into employee (firstname,lastname,fullname,address,city) values ('yasoda','kumari','K Yasoda kumari','anderi','Mumbai');
+
+EXPLAIN employee;
+
+show index from employee;
+
+--SELECT Statement
+EXPLAIN SELECT FirstName, lastname FROM employee
+order by ID;
++----+-------------+----------+------------+-------+---------------+---------+---------+------+------+----------+-------+
+| id | select_type | table    | partitions | type  | possible_keys | key     | key_len | ref  | rows | filtered | Extra |
++----+-------------+----------+------------+-------+---------------+---------+---------+------+------+----------+-------+
+|  1 | SIMPLE      | employee | NULL       | index | NULL          | PRIMARY | 4       | NULL |   14 |   100.00 | NULL  |
++----+-------------+----------+------------+-------+---------------+---------+---------+------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+--SELECT Statement
+EXPLAIN SELECT FirstName, lastname FROM employee
+order by firstname;
++----+-------------+----------+------------+-------+---------------+-------------------------------+---------+------+------+----------+-------------+
+| id | select_type | table    | partitions | type  | possible_keys | key                           | key_len | ref  | rows | filtered | Extra       |
++----+-------------+----------+------------+-------+---------------+-------------------------------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | employee | NULL       | index | NULL          | idx_employee_table_first_last | 2045    | NULL |   14 |   100.00 | Using index |
++----+-------------+----------+------------+-------+---------------+-------------------------------+---------+------+------+----------+-------------+
+
+--SELECT Statement
+EXPLAIN SELECT FirstName, lastname FROM employee
+order by lastname;
++----+-------------+----------+------------+-------+---------------+-------------------------------+---------+------+------+----------+-----------------------------+
+| id | select_type | table    | partitions | type  | possible_keys | key                           | key_len | ref  | rows | filtered | Extra                       |
++----+-------------+----------+------------+-------+---------------+-------------------------------+---------+------+------+----------+-----------------------------+
+|  1 | SIMPLE      | employee | NULL       | index | NULL          | idx_employee_table_first_last | 2045    | NULL |   14 |   100.00 | Using index; Using filesort |
++----+-------------+----------+------------+-------+---------------+-------------------------------+---------+------+------+----------+-----------------------------+
+
+--SELECT Statement
+EXPLAIN SELECT FirstName, lastname FROM employee
+order by fullname;
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+----------------+
+| id | select_type | table    | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra          |
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+----------------+
+|  1 | SIMPLE      | employee | NULL       | ALL  | NULL          | NULL | NULL    | NULL |   14 |   100.00 | Using filesort |
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+----------------+
+1 row in set, 1 warning (0.00 sec)
+-- No index on fullname, for that reason its not using any index on this table
+
+--1-SELECT Statement
+EXPLAIN select firstname,lastname from employee
+where ID=10;
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+| id | select_type | table    | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | employee | NULL       | const | PRIMARY       | PRIMARY | 4       | const |    1 |   100.00 | NULL  |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+EXPLAIN select firstname,lastname from employee
+where ID=10
+order by ID;
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+| id | select_type | table    | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | employee | NULL       | const | PRIMARY       | PRIMARY | 4       | const |    1 |   100.00 | NULL  |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+--its using on PRIMARY key index.
+
+EXPLAIN select firstname,lastname from employee
+where ID=10
+order by firstname;
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+| id | select_type | table    | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | employee | NULL       | const | PRIMARY       | PRIMARY | 4       | const |    1 |   100.00 | NULL  |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+EXPLAIN select firstname,lastname from employee
+where ID=10
+order by fullname;
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+| id | select_type | table    | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | employee | NULL       | const | PRIMARY       | PRIMARY | 4       | const |    1 |   100.00 | NULL  |
++----+-------------+----------+------------+-------+---------------+---------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+--2-SELECT Statement
+
+EXPLAIN select firstname,lastname from employee
+where firstname = 'meena';
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-------------+
+| id | select_type | table    | partitions | type | possible_keys                 | key                           | key_len | ref   | rows | filtered | Extra       |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-------------+
+|  1 | SIMPLE      | employee | NULL       | ref  | idx_employee_table_first_last | idx_employee_table_first_last | 1022    | const |    1 |   100.00 | Using index |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+--its using secondary index
+
+EXPLAIN select firstname,lastname from employee
+where firstname = 'meena'
+order by ID;
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-----------------------------+
+| id | select_type | table    | partitions | type | possible_keys                 | key                           | key_len | ref   | rows | filtered | Extra                       |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-----------------------------+
+|  1 | SIMPLE      | employee | NULL       | ref  | idx_employee_table_first_last | idx_employee_table_first_last | 1022    | const |    1 |   100.00 | Using index; Using filesort |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-----------------------------+
+1 row in set, 1 warning (0.00 sec)
+
+EXPLAIN select firstname,lastname from employee
+where firstname = 'meena'
+order by firstname;
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-------------+
+| id | select_type | table    | partitions | type | possible_keys                 | key                           | key_len | ref   | rows | filtered | Extra       |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-------------+
+|  1 | SIMPLE      | employee | NULL       | ref  | idx_employee_table_first_last | idx_employee_table_first_last | 1022    | const |    1 |   100.00 | Using index |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+-- its using secondary index
+
+EXPLAIN select firstname,lastname from employee
+where firstname = 'meena'
+order by fullname;
+--- Guess ??
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+----------------+
+| id | select_type | table    | partitions | type | possible_keys                 | key                           | key_len | ref   | rows | filtered | Extra          |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+----------------+
+|  1 | SIMPLE      | employee | NULL       | ref  | idx_employee_table_first_last | idx_employee_table_first_last | 1022    | const |    1 |   100.00 | Using filesort |
++----+-------------+----------+------------+------+-------------------------------+-------------------------------+---------+-------+------+----------+----------------+
+1 row in set, 1 warning (0.00 sec)
+
+
+--3-SELECT Statement ( Very Tricky )
+
+EXPLAIN select firstname,lastname from employee
+where lastname = 'kumari';
++----+-------------+----------+------------+-------+-------------------------------+-------------------------------+---------+------+------+----------+--------------------------+
+| id | select_type | table    | partitions | type  | possible_keys                 | key                           | key_len | ref  | rows | filtered | Extra                    |
++----+-------------+----------+------------+-------+-------------------------------+-------------------------------+---------+------+------+----------+--------------------------+
+|  1 | SIMPLE      | employee | NULL       | index | idx_employee_table_first_last | idx_employee_table_first_last | 2045    | NULL |   15 |    10.00 | Using where; Using index |
++----+-------------+----------+------------+-------+-------------------------------+-------------------------------+---------+------+------+----------+--------------------------+
+1 row in set, 1 warning (0.00 sec)
+
+EXPLAIN select firstname,lastname from employee
+where lastname = 'kumari'
+ORDER BY ID;
++----+-------------+----------+------------+-------+-------------------------------+---------+---------+------+------+----------+-------------+
+| id | select_type | table    | partitions | type  | possible_keys                 | key     | key_len | ref  | rows | filtered | Extra       |
++----+-------------+----------+------------+-------+-------------------------------+---------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | employee | NULL       | index | idx_employee_table_first_last | PRIMARY | 4       | NULL |   15 |    10.00 | Using where |
++----+-------------+----------+------------+-------+-------------------------------+---------+---------+------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+--here we are lastname , but it is using primary key why because of lastname in secondary index but this lastname is in second position, that why its using PRIMARY Index only.
+
+EXPLAIN select firstname,lastname from employee
+where lastname = 'kumari'
+ORDER BY FirstName;
++----+-------------+----------+------------+-------+-------------------------------+-------------------------------+---------+------+------+----------+--------------------------+
+| id | select_type | table    | partitions | type  | possible_keys                 | key                           | key_len | ref  | rows | filtered | Extra                    |
++----+-------------+----------+------------+-------+-------------------------------+-------------------------------+---------+------+------+----------+--------------------------+
+|  1 | SIMPLE      | employee | NULL       | index | idx_employee_table_first_last | idx_employee_table_first_last | 2045    | NULL |   15 |    10.00 | Using where; Using index |
++----+-------------+----------+------------+-------+-------------------------------+-------------------------------+---------+------+------+----------+--------------------------+
+1 row in set, 1 warning (0.00 sec)
+--here we are using lastname and ORDER BY using FirstName because of FirstName having secondary index , that why its using secondary Index only.
+
+EXPLAIN select firstname,lastname from employee
+where lastname = 'kumari'
+ORDER BY FullName;
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+| id | select_type | table    | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                       |
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+|  1 | SIMPLE      | employee | NULL       | ALL  | NULL          | NULL | NULL    | NULL |   15 |    10.00 | Using where; Using filesort |
++----+-------------+----------+------------+------+---------------+------+---------+------+------+----------+-----------------------------+
+1 row in set, 1 warning (0.00 sec)
+-- here its not using any index, because lastname is second column of secondary index. its going complete table scan.
+
+--for clean up the session, you can drop the index
+DROP TABLE employee;
+
+------- Exercise 9 ------------------------
+we will see the demo like FORCE , USE and IGNORE called as Hints.
+need to use rarely 
+
+show index on film on sakila;
+
+explain select title,rental_duration,length 
+from film 
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | film  | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 1000 |     1.00 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+-- in this case, its not using any index 
+
+---Creating Index
+Create index idx_film_rental_duration on film(rental_duration);
+Create index idx_film_length on film(length);
+
+---Creating Cover Index
+Create index idx_film_rental_duration_length on film(rental_duration,length);
+Create index idx_film_length_rental_duration on film(length,rental_duration);
+
+explain select title,rental_duration,length 
+from film 
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys                                                                                            | key                             | key_len | ref         | rows | filtered | Extra |
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_rental_duration,idx_film_length,idx_film_rental_duration_length,idx_film_length_rental_duration | idx_film_rental_duration_length | 4       | const,const |    4 |   100.00 | NULL  |
++----+-------------+-------+------------+------+----------------------------------------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+1 row in set, 1 warning (0.01 sec)
+
+explain select title,rental_duration,length 
+from film force index (idx_film_length_rental_duration)
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+------+---------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys                   | key                             | key_len | ref         | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_length_rental_duration | idx_film_length_rental_duration | 4       | const,const |    4 |   100.00 | NULL  |
++----+-------------+-------+------------+------+---------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+1 row in set, 1 warning (0.03 sec)
+-- forcefully idx_film_length_rental_duration using this index on possible_keys as well key Columns
+
+explain select title,rental_duration,length 
+from film use index (idx_film_rental_duration,idx_film_length,idx_film_length_rental_duration)
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys                                                            | key                             | key_len | ref         | rows | filtered | Extra |
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_rental_duration,idx_film_length,idx_film_length_rental_duration | idx_film_length_rental_duration | 4       | const,const |    4 |   100.00 | NULL  |
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+--USE Index will give polite suggestion to mysql server, based on that its using idx_film_length_rental_duration
+
+explain select title,rental_duration,length 
+from film ignore index (idx_film_length_rental_duration)
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys                                                            | key                             | key_len | ref         | rows | filtered | Extra |
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_rental_duration,idx_film_length,idx_film_rental_duration_length | idx_film_rental_duration_length | 4       | const,const |    4 |   100.00 | NULL  |
++----+-------------+-------+------------+------+--------------------------------------------------------------------------+---------------------------------+---------+-------------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+--in this case idx_film_length_rental_duration index is ignored in possible_keys as well and again ignore the index [ idx_film_rental_duration_length ] and see the result
+explain select title,rental_duration,length 
+from film ignore index (idx_film_length_rental_duration,idx_film_rental_duration_length)
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+------------------------------------------------------------------------+
+| id | select_type | table | partitions | type        | possible_keys                            | key                                      | key_len | ref  | rows | filtered | Extra                                                                  |
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+------------------------------------------------------------------------+
+|  1 | SIMPLE      | film  | NULL       | index_merge | idx_film_rental_duration,idx_film_length | idx_film_length,idx_film_rental_duration | 3,1     | NULL |    2 |   100.00 | Using intersect(idx_film_length,idx_film_rental_duration); Using where |
++----+-------------+-------+------------+-------------+------------------------------------------+------------------------------------------+---------+------+------+----------+------------------------------------------------------------------------+
+1 row in set, 1 warning (0.00 sec)
+-- in possible_keys both indexes are ignored.
+
+--again ignore the index [ idx_film_rental_duration ] and see the result
+explain select title,rental_duration,length 
+from film ignore index (idx_film_length_rental_duration,idx_film_rental_duration_length,idx_film_rental_duration)
+where rental_duration = 6 and length = 100;
++----+-------------+-------+------------+------+-----------------+-----------------+---------+-------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys   | key             | key_len | ref   | rows | filtered | Extra       |
++----+-------------+-------+------------+------+-----------------+-----------------+---------+-------+------+----------+-------------+
+|  1 | SIMPLE      | film  | NULL       | ref  | idx_film_length | idx_film_length | 3       | const |   12 |    20.00 | Using where |
++----+-------------+-------+------------+------+-----------------+-----------------+---------+-------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+
+--like this you can verify to optimize the best queries for your application
+
+--Clean up the session Dropping all Indexes
+
+drop index idx_film_length on film;
+drop index idx_film_rental_duration on film;
+
+drop index idx_film_length_rental_duration on film;
+drop index idx_film_rental_duration_length on film;
+
+
+
+
+Upon running ANALYZE TABLE
+
+Data and Index Fragmentation
+	Fragmentation in B-Tree indexes can lead to heavy IO and nonsequential reads on disk, leading to poor query performance
+	For optimal performance it is essential for data to be organized in ordered sequence and closely placed in the leaf page
+	To reduce data fragmentation run OPTIMIZE TABLE command on fragmented table
+		Workaround: ALTER TABLE TableName Engine=EngineName;
+	To reduce index fragmentation drop and recreate the indexes
+	Run at intervals based on your transactional operations
+
+Demo:-
+
+show index from film from sakila;
+show index from film;
+select * from information_schema.statistics
+where table_name = 'film';
+
+--analyse table film [Update Statistics]
+analyze table film;
+
+--optimize table film [reduce fragmentation]
+optimize table film;
+
+--alter table film [ recreate the index ]
+alter table film;
+
+--creating index
+create index idx_film_length on film (length);
+--droping index
+drop index idx_film_length on film;
+
+final outline 
+
+#1 With the help of the statistics MySQL Optimizer selects an optimal index for any query
+#2 Statistics can be updated manually with the help of ANALYZE TABLE command
+#3 Data and Index fragmentation can lead to poor performance of the query
+#4 Command OPTIMIZE TABLE will reduce fragmentation in data tables
+#5 Recreate Indexes to remove index fragmentation
+
+
+
+
+
+
+
+
