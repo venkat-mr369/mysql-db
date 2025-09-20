@@ -18,14 +18,6 @@ Enter password: ********host and user represent the host name where your MySQL s
 ```bash
 shell> mysql -h host -u user –p
 ```
-  
-
-Got it 👍 — I’ll polish and reorganize your text so it reads more clearly, in a structured way, but still keeps all the technical detail.
-
-Here’s the improved version:
-
----
-
 # MySQL Overview
 
 ### Connecting to MySQL
