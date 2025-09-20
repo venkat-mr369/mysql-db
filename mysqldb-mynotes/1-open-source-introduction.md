@@ -1,18 +1,23 @@
-Overview of MySQL
+#### Overview of MySQL
+
+
 Introduction to MySQL by showing how to use the mysql client program to create and use a simple database. mysql (sometimes referred to as the “terminal monitor” or just “monitor”) is an interactive program that enables you to connect to a MySQL server, run queries, and view the results. mysql may also be used in batch mode: you place your queries in a file beforehand, then tell mysql to execute the contents of the file. Both ways of using mysql are covered here.
 
 To see a list of options provided by mysql, invoke it with the --help option:
+```bash
 shell> mysql –help
+```
 
 This assumes that mysql is installed on your machine and that a MySQL server is available to which you can connect. 
 
 Connecting to and disconnecting from the Server To connect to the server, you will usually need to provide a MySQL user name when you invoke mysql and, most likely, a password. If the server runs on a machine other than the one where you log in, you will also need to specify a host name. Contact your administrator to find out what connection parameters you should use to connect (that is, what host, user name, and password to use). Once you know the proper parameters, you should be able to connect like this:
-
+```bash
 shell> mysql -h host -u user –p
 Enter password: ********host and user represent the host name where your MySQL server is running and the user name of your MySQL account. Substitute appropriate values for your setup. The ******** represents your password; enter it when mysql displays the Enter password: prompt. If that works, you should see some introductory information followed by a mysql> prompt:
-
+```
+```bash
 shell> mysql -h host -u user –p
-
+```
   
 
 The mysql> prompt tells you that mysql is ready for you to enter SQL statements.
