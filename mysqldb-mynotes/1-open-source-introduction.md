@@ -81,15 +81,16 @@ MySQL Enterprise Backup [MEB] Paid ( or ) Xtrabackup Percona GPL
 
 ### MySQL Features
 ```docx
-Relational Database Management System (RDBMS): MySQL is a relational database management system.
-Easy to use: MySQL is easy to use. You have to get only the basic knowledge of SQL. You can build and interact with MySQL with only a few simple SQL statements.
-It is secure: MySQL consist of a solid data security layer that protects sensitive data from intruders. Passwords are encrypted in MySQL.
-Client/ Server Architecture: MySQL follows a client /server architecture. There is a database server (MySQL) and arbitrarily many clients (application programs), which communicate with the server; that is, they query data, save changes, etc.
-Free to download: MySQL is free to use and you can download it from MySQL official website.
-It is scalable: MySQL can handle almost any amount of data, up to as much as 50 million rows or more. The default file size limit is about 4 GB. However, you can increase this number to a theoretical limit of 8 TB of data.
-Compatibale on many operating systems: MySQL is compatible to run on many operating systems, like Novell NetWare, Windows* Linux*, many varieties of UNIX* (such as Sun* Solaris*, AIX, and DEC* UNIX), OS/2, FreeBSD*, and others. MySQL also provides a facility that the clients can run on the same computer as the server or on another computer (communication via a local network or the Internet).
-Allows roll-back: MySQL allows transactions to be rolled back, commit and crash recovery.
-High Performance: MySQL is faster, more reliable and cheaper because of its unique storage engine architecture.
-High Flexibility: MySQL supports a large number of embedded applications which makes MySQL very flexible.
-High Productivity: MySQL uses Triggers, Stored procedures and views which allows the developer to give a higher productivity.
+1.	Relational Database Management System (RDBMS): MySQL is a relational database management system.
+2.	Easy to use: MySQL is easy to use. You have to get only the basic knowledge of SQL. You can build and interact with MySQL with only a few simple SQL statements.
+3.	It is secure: MySQL consist of a solid data security layer that protects sensitive data from intruders. Passwords are encrypted in MySQL.
+4.	Client/ Server Architecture: MySQL follows a client /server architecture. There is a database server (MySQL) and arbitrarily many clients (application programs), which communicate with the server; that is, they query data, save changes, etc.
+5.	Free to download: MySQL is free to use and you can download it from MySQL official website.
+6.	It is scalable: MySQL can handle almost any amount of data, up to as much as 50 million rows or more. The default file size limit is about 4 GB. However, you can increase this number to a theoretical limit of 8 TB of data.
+7.	Compatibale on many operating systems: MySQL is compatible to run on many operating systems, like Novell NetWare, Windows* Linux*, many varieties of UNIX* (such as Sun* Solaris*, AIX, and DEC* UNIX), OS/2, FreeBSD*, and others. MySQL also provides a facility that the clients can run on the same computer as the server or on another computer (communication via a local network or the Internet).
+8.	Allows roll-back: MySQL allows transactions to be rolled back, commit and crash recovery.
+9.	High Performance: MySQL is faster, more reliable and cheaper because of its unique storage engine architecture.
+10.	High Flexibility: MySQL supports a large number of embedded applications which makes MySQL very flexible.
+11.	High Productivity: MySQL uses Triggers, Stored procedures and views which allows the developer to give a higher productivity.
+
 ```
