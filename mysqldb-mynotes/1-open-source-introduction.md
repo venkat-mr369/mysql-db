@@ -13,6 +13,8 @@ This assumes that mysql is installed on your machine and that a MySQL server is 
 Connecting to and disconnecting from the Server To connect to the server, you will usually need to provide a MySQL user name when you invoke mysql and, most likely, a password. If the server runs on a machine other than the one where you log in, you will also need to specify a host name. Contact your administrator to find out what connection parameters you should use to connect (that is, what host, user name, and password to use). Once you know the proper parameters, you should be able to connect like this:
 ```bash
 shell> mysql -h host -u user –p
+```
+```sh
 Enter password: ********host and user represent the host name where your MySQL server is running and the user name of your MySQL account. Substitute appropriate values for your setup. The ******** represents your password; enter it when mysql displays the Enter password: prompt. If that works, you should see some introductory information followed by a mysql> prompt:
 ```
 ```bash
