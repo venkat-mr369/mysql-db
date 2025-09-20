@@ -14,8 +14,11 @@ Connecting to and disconnecting from the Server To connect to the server, you wi
 ```bash
 shell> mysql -h host -u user –p
 ```
-```sh
-Enter password: ********host and user represent the host name where your MySQL server is running and the user name of your MySQL account. Substitute appropriate values for your setup. The ******** represents your password; enter it when mysql displays the Enter password: prompt. If that works, you should see some introductory information followed by a mysql> prompt:
+```bash
+Enter password: ********host and user represent the host name where your MySQL server is running and the user name of your MySQL account. Substitute appropriate values for your setup. The ******** represents your password; enter it when mysql displays the Enter password: prompt. If that works, you should see some introductory information followed by a
+```
+```bash
+mysql> prompt:
 ```
 ```bash
 shell> mysql -h host -u user –p
