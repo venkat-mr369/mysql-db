@@ -80,7 +80,7 @@ Community Edition - Online Backups – Won’t Support - Physical Backups.
 MySQL Enterprise Backup [MEB] Paid ( or ) Xtrabackup Percona GPL
 
 ### MySQL Features
-```txt
+```rtf
 Relational Database Management System (RDBMS): MySQL is a relational database management system.
 Easy to use: MySQL is easy to use. You have to get only the basic knowledge of SQL. You can build and interact with MySQL with only a few simple SQL statements.
 It is secure: MySQL consist of a solid data security layer that protects sensitive data from intruders. Passwords are encrypted in MySQL.
