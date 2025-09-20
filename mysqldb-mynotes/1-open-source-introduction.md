@@ -79,8 +79,8 @@ Enterprise Edition , Standard Edition
 Community Edition - Online Backups – Won’t Support - Physical Backups.
 MySQL Enterprise Backup [MEB] Paid ( or ) Xtrabackup Percona GPL
 
-MySQL Features
-
+### MySQL Features
+```sql
 Relational Database Management System (RDBMS): MySQL is a relational database management system.
 Easy to use: MySQL is easy to use. You have to get only the basic knowledge of SQL. You can build and interact with MySQL with only a few simple SQL statements.
 It is secure: MySQL consist of a solid data security layer that protects sensitive data from intruders. Passwords are encrypted in MySQL.
@@ -92,3 +92,4 @@ Allows roll-back: MySQL allows transactions to be rolled back, commit and crash 
 High Performance: MySQL is faster, more reliable and cheaper because of its unique storage engine architecture.
 High Flexibility: MySQL supports a large number of embedded applications which makes MySQL very flexible.
 High Productivity: MySQL uses Triggers, Stored procedures and views which allows the developer to give a higher productivity.
+```
