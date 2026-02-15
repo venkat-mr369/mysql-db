@@ -28,10 +28,10 @@ This manager **automatically decides**: "This order is just a question about the
   ┌──────────────────────▼────────────────────────────────────┐
   │                   MAXSCALE PROXY                          │
   │                                                           │
-  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-  │  │ Protocol │  │  Router  │  │  Filter  │  │ Monitor  │  │
-  │  │ Module   │  │  Module  │  │  Module  │  │ Module   │  │
-  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │
+  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+  │  │ Protocol │  │  Router  │  │  Filter  │  │ Monitor  │   │
+  │  │ Module   │  │  Module  │  │  Module  │  │ Module   │   │
+  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
   │                                                           │
   │  Understands SQL │ Routes queries │ Filters  │ Monitors   │
   │  protocol        │ to right server│ traffic  │ server     │
@@ -60,20 +60,20 @@ This manager **automatically decides**: "This order is just a question about the
       │
       ▼
 ┌───────────────┐
-│ 1. PROTOCOL    │  ← Speaks MariaDB/MySQL protocol to your app
-│   Module       │     (MariaDBClient for frontend, MariaDBBackend for backend)
+│ 1. PROTOCOL   │  ← Speaks MariaDB/MySQL protocol to your app
+│   Module      │     (MariaDBClient for frontend, MariaDBBackend for backend)
 └───────┬───────┘
         │
         ▼
 ┌───────────────┐
-│ 2. FILTER      │  ← Inspects/modifies queries passing through
-│   Module(s)    │     (Firewall, Cache, Logging, Regex, Throttle)
+│ 2. FILTER     │  ← Inspects/modifies queries passing through
+│   Module(s)   │     (Firewall, Cache, Logging, Regex, Throttle)
 └───────┬───────┘
         │
         ▼
 ┌───────────────┐
-│ 3. ROUTER      │  ← Decides WHERE to send the query
-│   Module       │     (ReadWriteSplit, ReadConnRoute, SchemaRouter)
+│ 3. ROUTER     │  ← Decides WHERE to send the query
+│   Module      │     (ReadWriteSplit, ReadConnRoute, SchemaRouter)
 └───────┬───────┘
         │
         ▼
