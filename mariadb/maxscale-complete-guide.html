@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MariaDB MaxScale — Complete In-Depth Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0e14;
+  --surface: #161923;
+  --surface2: #1e2230;
+  --border: #2a2f42;
+  --text: #e2e5f0;
+  --text-dim: #8890aa;
+  --marine: #3b82f6;
+  --teal: #14b8a6;
+  --purple: #a78bfa;
+  --amber: #f59e0b;
+  --rose: #f43f5e;
+  --green: #22c55e;
+  --orange: #f97316;
+  --sky: #38bdf8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); line-height:1.75; }
+.container { max-width:1180px; margin:0 auto; padding:0 24px; }
+
+/* Hero */
+.hero {
+  padding:80px 0 50px;
+  text-align:center;
+  position:relative;
+}
+.hero::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 40% 30%, rgba(59,130,246,0.1) 0%, transparent 60%),
+              radial-gradient(ellipse at 60% 70%, rgba(20,184,166,0.08) 0%, transparent 60%);
+  pointer-events:none;
+}
+.hero h1 {
+  font-family:'Fraunces',serif;
+  font-size:clamp(2rem,5vw,3.6rem);
+  font-weight:900;
+  background:linear-gradient(135deg, var(--marine), var(--teal), var(--sky));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  position:relative;
+  margin-bottom:14px;
+}
+.hero .subtitle { color:var(--text-dim); font-size:1.1rem; position:relative; max-width:750px; margin:0 auto; }
+.badge-hero {
+  display:inline-block;
+  background:rgba(59,130,246,0.12);
+  color:var(--marine);
+  padding:6px 18px;
+  border-radius:20px;
+  font-size:0.82rem;
+  font-weight:600;
+  margin-top:16px;
+  position:relative;
+}
+
+/* Sections */
+.section { padding:40px 0; }
+.sec-title {
+  font-family:'Fraunces',serif;
+  font-size:1.9rem;
+  font-weight:700;
+  margin-bottom:8px;
+}
+.sec-sub { color:var(--text-dim); margin-bottom:30px; font-size:1.02rem; }
+
+/* Cards */
+.card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:32px;
+  margin-bottom:28px;
+  position:relative;
+  overflow:hidden;
+}
+.card-accent { border-top:3px solid var(--marine); }
+.card-teal { border-top:3px solid var(--teal); }
+.card-purple { border-top:3px solid var(--purple); }
+.card-amber { border-top:3px solid var(--amber); }
+.card-rose { border-top:3px solid var(--rose); }
+.card-green { border-top:3px solid var(--green); }
+.card-orange { border-top:3px solid var(--orange); }
+
+.card h3 { font-size:1.35rem; font-weight:700; margin-bottom:12px; }
+.card p { color:var(--text-dim); margin-bottom:14px; }
+
+/* Diagram */
+.diagram {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:24px;
+  margin:20px 0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.82rem;
+  line-height:1.8;
+  overflow-x:auto;
+  white-space:pre;
+  color:var(--text-dim);
+}
+.diagram .hl1 { color:var(--marine); font-weight:500; }
+.diagram .hl2 { color:var(--teal); font-weight:500; }
+.diagram .hl3 { color:var(--amber); font-weight:500; }
+.diagram .hl4 { color:var(--purple); font-weight:500; }
+.diagram .hl5 { color:var(--rose); font-weight:500; }
+.diagram .hl6 { color:var(--green); font-weight:500; }
+
+/* Info Grid */
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin:20px 0; }
+.grid-item {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:20px;
+}
+.grid-item h4 {
+  font-size:0.82rem;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--text-dim);
+  margin-bottom:10px;
+}
+.grid-item ul { padding-left:18px; }
+.grid-item li { margin-bottom:5px; font-size:0.93rem; }
+
+/* Example */
+.example {
+  background:rgba(20,184,166,0.06);
+  border-left:3px solid var(--teal);
+  border-radius:0 10px 10px 0;
+  padding:18px 22px;
+  margin:18px 0;
+}
+.example h4 { color:var(--teal); font-size:0.95rem; margin-bottom:6px; }
+.example p { color:var(--text-dim); font-size:0.95rem; margin-bottom:0; }
+
+/* Code */
+.code {
+  background:#0a0c12;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:20px;
+  margin:16px 0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.8rem;
+  overflow-x:auto;
+  line-height:1.65;
+  color:#c0c5d8;
+}
+.code .cmd { color:var(--green); }
+.code .cmt { color:#4a5068; }
+.code .str { color:var(--amber); }
+.code .kw { color:var(--purple); }
+.code .flag { color:var(--sky); }
+
+/* OS Tabs */
+.os-tabs {
+  display:flex;
+  gap:8px;
+  margin:20px 0 0;
+  flex-wrap:wrap;
+}
+.os-tab {
+  padding:8px 20px;
+  border-radius:8px 8px 0 0;
+  font-size:0.88rem;
+  font-weight:600;
+  cursor:pointer;
+  border:1px solid var(--border);
+  border-bottom:none;
+  background:var(--surface2);
+  color:var(--text-dim);
+  transition:0.2s;
+}
+.os-tab.active, .os-tab:hover { background:var(--surface); color:var(--text); border-color:var(--marine); }
+.os-tab.amazon { border-top:2px solid var(--orange); }
+.os-tab.centos { border-top:2px solid var(--purple); }
+.os-tab.ubuntu { border-top:2px solid var(--amber); }
+.os-content {
+  display:none;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:0 12px 12px 12px;
+  padding:28px;
+}
+.os-content.active { display:block; }
+
+/* Feature Grid */
+.feat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:24px 0; }
+.feat-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:22px;
+  transition:border-color 0.3s;
+}
+.feat-card:hover { border-color:var(--marine); }
+.feat-icon { font-size:1.6rem; margin-bottom:8px; }
+.feat-card h4 { font-size:1rem; margin-bottom:6px; }
+.feat-card p { font-size:0.9rem; color:var(--text-dim); margin:0; }
+
+/* Table */
+.table-wrap {
+  overflow-x:auto;
+  margin:24px 0;
+  border-radius:12px;
+  border:1px solid var(--border);
+}
+table { width:100%; border-collapse:collapse; font-size:0.88rem; min-width:700px; }
+thead th {
+  background:var(--surface2);
+  padding:14px;
+  text-align:left;
+  font-weight:600;
+  border-bottom:2px solid var(--border);
+  white-space:nowrap;
+}
+tbody td {
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  color:var(--text-dim);
+  vertical-align:top;
+}
+tbody tr:hover { background:rgba(59,130,246,0.04); }
+td:first-child { color:var(--text); font-weight:600; }
+
+/* Step indicator */
+.step-num {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:rgba(59,130,246,0.15);
+  color:var(--marine);
+  font-weight:700;
+  font-size:0.9rem;
+  margin-right:10px;
+  flex-shrink:0;
+}
+.step-row {
+  display:flex;
+  align-items:flex-start;
+  margin-bottom:20px;
+}
+.step-content { flex:1; }
+.step-content h4 { margin-bottom:6px; }
+.step-content p { color:var(--text-dim); font-size:0.95rem; margin:0; }
+
+/* Warning */
+.warning {
+  background:rgba(245,158,11,0.08);
+  border-left:3px solid var(--amber);
+  border-radius:0 10px 10px 0;
+  padding:16px 20px;
+  margin:16px 0;
+}
+.warning h4 { color:var(--amber); font-size:0.9rem; margin-bottom:4px; }
+.warning p { color:var(--text-dim); font-size:0.92rem; margin:0; }
+
+/* Flow */
+.flow-horizontal {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:20px 0;
+}
+.flow-box {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 20px;
+  text-align:center;
+  min-width:130px;
+}
+.flow-box.primary { border-color:var(--marine); background:rgba(59,130,246,0.08); }
+.flow-box h5 { font-size:0.85rem; margin-bottom:4px; }
+.flow-box p { font-size:0.78rem; color:var(--text-dim); margin:0; }
+.flow-arrow { color:var(--marine); font-size:1.4rem; font-weight:700; }
+
+@media (max-width:768px) {
+  .container { padding:0 16px; }
+  .card { padding:22px; }
+  .flow-horizontal { flex-direction:column; }
+  .flow-arrow { transform:rotate(90deg); }
+}
+</style>
+<script>
+function showOS(tabId, contentId) {
+  document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.os-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  document.getElementById(contentId).classList.add('active');
+}
+</script>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ====== HERO ====== -->
+<div class="hero">
+  <h1>MariaDB MaxScale — Complete In-Depth Guide</h1>
+  <p class="subtitle">What MaxScale is, how it works internally, all its features explained in simple English, and step-by-step implementation on Amazon Linux, CentOS & Ubuntu.</p>
+  <span class="badge-hero">Advanced Database Proxy · Load Balancer · Firewall · Failover Manager</span>
+</div>
+
+<!-- ====== WHAT IS MAXSCALE ====== -->
+<div class="section">
+  <h2 class="sec-title">What Exactly is MaxScale?</h2>
+  <p class="sec-sub">Understanding MaxScale in the simplest way possible</p>
+
+  <div class="card card-accent">
+    <h3>MaxScale = Smart Middleman Between Your App and Database</h3>
+    <p>
+      Imagine you have a restaurant (your application) and multiple kitchens (your database servers). Instead of having your waiters (app connections) figure out which kitchen to go to, you hire a <strong>smart manager (MaxScale)</strong> who sits between the waiters and kitchens.
+    </p>
+    <p>
+      This manager <strong>automatically decides</strong>: "This order is just a question about the menu? Send it to any kitchen (READ). This order needs to cook food? Send it to the head kitchen (WRITE)." If the head kitchen catches fire (server crash), the manager <strong>instantly promotes another kitchen</strong> to be the head — and the waiters don't even notice anything changed!
+    </p>
+    <p style="color:var(--text);">
+      <strong>In technical terms:</strong> MaxScale is a database proxy developed by MariaDB Corporation that sits between your application and your MariaDB/MySQL database servers. It understands SQL, can route queries intelligently, provides automatic failover, acts as a database firewall, and offers load balancing — all <strong>transparently</strong> (your app thinks it's talking to a single database).
+    </p>
+  </div>
+
+  <!-- Architecture Diagram -->
+  <div class="diagram"><span class="hl1">                   How MaxScale Fits In Your Architecture</span>
+
+<span class="hl3">  ┌───────────────────────────────────────────────────────────┐</span>
+<span class="hl3">  │                    YOUR APPLICATION                       │</span>
+<span class="hl3">  │        (PHP, Python, Java, Node.js, etc.)                 │</span>
+<span class="hl3">  └──────────────────────┬────────────────────────────────────┘</span>
+                         │
+              Connects to port 3306
+             (thinks it's one database)
+                         │
+<span class="hl1">  ┌──────────────────────▼────────────────────────────────────┐</span>
+<span class="hl1">  │                   MAXSCALE PROXY                          │</span>
+<span class="hl1">  │                                                           │</span>
+<span class="hl1">  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │</span>
+<span class="hl1">  │  │ Protocol │  │  Router  │  │  Filter  │  │ Monitor  │  │</span>
+<span class="hl1">  │  │ Module   │  │  Module  │  │  Module  │  │ Module   │  │</span>
+<span class="hl1">  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │</span>
+<span class="hl1">  │                                                           │</span>
+<span class="hl1">  │  Understands SQL │ Routes queries │ Filters  │ Monitors   │</span>
+<span class="hl1">  │  protocol        │ to right server│ traffic  │ server     │</span>
+<span class="hl1">  │                  │                │          │ health     │</span>
+<span class="hl1">  └───────┬──────────┴──────┬─────────┴──────┬───┴────────────┘</span>
+          │                 │                │
+    <span class="hl2">SELECT goes to</span>    <span class="hl6">INSERT/UPDATE to</span>    <span class="hl4">Monitors all</span>
+    <span class="hl2">any replica</span>       <span class="hl6">primary only</span>        <span class="hl4">servers</span>
+          │                 │                │
+          ▼                 ▼                ▼
+<span class="hl6">  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐</span>
+<span class="hl6">  │   PRIMARY    │  │  REPLICA #1  │  │  REPLICA #2  │</span>
+<span class="hl6">  │  Read+Write  │  │  Read Only   │  │  Read Only   │</span>
+<span class="hl6">  │  (Master)    │  │  (Slave)     │  │  (Slave)     │</span>
+<span class="hl6">  └──────────────┘  └──────────────┘  └──────────────┘</span></div>
+</div>
+
+<!-- ====== CORE COMPONENTS ====== -->
+<div class="section">
+  <h2 class="sec-title">MaxScale Internal Architecture</h2>
+  <p class="sec-sub">The 4 building blocks (plugin modules) that make MaxScale work</p>
+
+  <div class="diagram"><span class="hl1">              MaxScale Plugin Architecture (How Modules Connect)</span>
+
+    <span class="hl3">Client App</span>
+        │
+        ▼
+<span class="hl1">┌───────────────┐</span>
+<span class="hl1">│ 1. PROTOCOL    │</span>  ← Speaks MariaDB/MySQL protocol to your app
+<span class="hl1">│   Module       │</span>     (MariaDBClient for frontend, MariaDBBackend for backend)
+<span class="hl1">└───────┬───────┘</span>
+        │
+        ▼
+<span class="hl4">┌───────────────┐</span>
+<span class="hl4">│ 2. FILTER      │</span>  ← Inspects/modifies queries passing through
+<span class="hl4">│   Module(s)    │</span>     (Firewall, Cache, Logging, Regex, Throttle)
+<span class="hl4">└───────┬───────┘</span>
+        │
+        ▼
+<span class="hl2">┌───────────────┐</span>
+<span class="hl2">│ 3. ROUTER      │</span>  ← Decides WHERE to send the query
+<span class="hl2">│   Module       │</span>     (ReadWriteSplit, ReadConnRoute, SchemaRouter)
+<span class="hl2">└───────┬───────┘</span>
+        │
+        ▼
+<span class="hl6">┌───────────────┐</span>
+<span class="hl6">│ 4. MONITOR     │</span>  ← Checks server health & triggers failover
+<span class="hl6">│   Module       │</span>     (MariaDBMon, GaleraMon, CsMonitor)
+<span class="hl6">└───────────────┘</span>
+
+  Data flows: <span class="hl3">App</span> → <span class="hl1">Protocol</span> → <span class="hl4">Filter(s)</span> → <span class="hl2">Router</span> → <span class="hl6">Backend Servers</span></div>
+
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🔌</div>
+      <h4>1. Protocol Module</h4>
+      <p><strong>What it does:</strong> Handles the communication language between your app and MaxScale, and between MaxScale and the backend databases. It speaks the MariaDB/MySQL wire protocol, so your app thinks it's talking directly to a database.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔀</div>
+      <h4>2. Router Module</h4>
+      <p><strong>What it does:</strong> The brain! It reads each SQL query and decides which backend server should execute it. A SELECT goes to a replica, an INSERT goes to the primary. This is where the "smart routing" magic happens.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔍</div>
+      <h4>3. Filter Module</h4>
+      <p><strong>What it does:</strong> Sits in the query pipeline and can inspect, modify, log, cache, or block queries. Think of it as security checkpoints at an airport — every query passes through before reaching the router.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">💓</div>
+      <h4>4. Monitor Module</h4>
+      <p><strong>What it does:</strong> Continuously pings all backend servers to check their health. If the primary dies, the monitor triggers automatic failover — promotes a replica and reconfigures replication. All without your app knowing.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ====== ALL ROUTERS EXPLAINED ====== -->
+<div class="section">
+  <h2 class="sec-title">Router Types Explained</h2>
+  <p class="sec-sub">The different ways MaxScale can route your database traffic</p>
+
+  <!-- ReadWriteSplit -->
+  <div class="card card-accent">
+    <h3>1. ReadWriteSplit Router (Most Popular)</h3>
+    <p>This is the <strong>most commonly used router</strong>. It analyzes each SQL statement and routes it based on whether it's a read or write operation.</p>
+    
+    <div class="diagram"><span class="hl1">                   ReadWriteSplit Router Flow</span>
+
+     App sends: <span class="hl2">SELECT * FROM users WHERE id=5;</span>
+                                │
+                    MaxScale parses the SQL
+                    Detects: It's a <span class="hl2">SELECT (READ)</span>
+                                │
+                     Routes to → <span class="hl2">Any Replica (load balanced)</span>
+                     
+     ─────────────────────────────────────────
+     
+     App sends: <span class="hl5">INSERT INTO orders VALUES (...);</span>
+                                │
+                    MaxScale parses the SQL
+                    Detects: It's an <span class="hl5">INSERT (WRITE)</span>
+                                │
+                     Routes to → <span class="hl5">Primary Server Only</span>
+     
+     ─────────────────────────────────────────
+     
+     App sends: <span class="hl3">BEGIN; SELECT ...; UPDATE ...; COMMIT;</span>
+                                │
+                    MaxScale detects: <span class="hl3">TRANSACTION</span>
+                                │
+                     Routes <span class="hl3">entire transaction → Primary</span>
+                     (to maintain ACID consistency)</div>
+
+    <div class="example">
+      <h4>🛒 Example Use Case</h4>
+      <p>Your e-commerce app does 90% reads (browsing products, checking prices) and 10% writes (placing orders). ReadWriteSplit sends the 90% reads across 3 replicas, reducing primary load by 90%. Your site gets 3x faster reads!</p>
+    </div>
+  </div>
+
+  <!-- ReadConnRoute -->
+  <div class="card card-teal">
+    <h3>2. ReadConnRoute Router (Connection-Based)</h3>
+    <p>Unlike ReadWriteSplit which routes per-query, ReadConnRoute routes the <strong>entire connection</strong> to one server. Once a client connects, ALL their queries go to that one server.</p>
+    
+    <div class="grid">
+      <div class="grid-item">
+        <h4>When to Use</h4>
+        <ul>
+          <li>Simple load balancing across servers</li>
+          <li>When you don't need per-query routing</li>
+          <li>Galera Cluster (all nodes are equal)</li>
+          <li>Lower overhead than ReadWriteSplit</li>
+        </ul>
+      </div>
+      <div class="grid-item">
+        <h4>Options</h4>
+        <ul>
+          <li><code>router_options=master</code> → all to primary</li>
+          <li><code>router_options=slave</code> → all to replicas</li>
+          <li><code>router_options=synced</code> → Galera synced nodes</li>
+          <li><code>router_options=running</code> → any running server</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SchemaRouter -->
+  <div class="card card-purple">
+    <h3>3. SchemaRouter (Database/Schema-Based)</h3>
+    <p>Routes queries based on <strong>which database/schema</strong> they target. Perfect for sharding — different databases live on different servers.</p>
+    
+    <div class="diagram"><span class="hl4">   SchemaRouter Example:</span>
+
+     Server A has: <span class="hl1">users_db</span>, <span class="hl1">auth_db</span>
+     Server B has: <span class="hl2">orders_db</span>, <span class="hl2">inventory_db</span>
+     Server C has: <span class="hl3">analytics_db</span>, <span class="hl3">logs_db</span>
+
+     App: <span class="hl1">USE users_db; SELECT * FROM users;</span>  →  Routes to Server A
+     App: <span class="hl2">USE orders_db; INSERT INTO orders;</span> →  Routes to Server B
+     App: <span class="hl3">USE analytics_db; SELECT ...;</span>       →  Routes to Server C</div>
+  </div>
+</div>
+
+<!-- ====== ALL FEATURES ====== -->
+<div class="section">
+  <h2 class="sec-title">Complete Feature Breakdown</h2>
+  <p class="sec-sub">Every major MaxScale feature explained</p>
+
+  <!-- Automatic Failover -->
+  <div class="card card-rose">
+    <h3>🔄 Automatic Failover</h3>
+    <p>This is MaxScale's <strong>killer feature</strong>. When the primary (master) database crashes, MaxScale automatically:</p>
+    
+    <div class="diagram"><span class="hl5">              Automatic Failover Process</span>
+
+<span class="hl1">  STEP 1: Normal Operation</span>
+  ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │ PRIMARY  │───►│ REPLICA1 │    │ REPLICA2 │
+  │ (Master) │───►│ (Slave)  │    │ (Slave)  │
+  └──────────┘    └──────────┘    └──────────┘
+       ▲
+    MaxScale Monitor pings every 2 seconds
+    
+<span class="hl5">  STEP 2: Primary Crashes! 💥</span>
+  ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │ PRIMARY  │    │ REPLICA1 │    │ REPLICA2 │
+  │  💀 DEAD │    │ (Slave)  │    │ (Slave)  │
+  └──────────┘    └──────────┘    └──────────┘
+       ▲
+    Monitor detects: "Primary is DOWN!"
+    
+<span class="hl6">  STEP 3: Automatic Promotion (within seconds)</span>
+                   ┌──────────┐    ┌──────────┐
+                   │ REPLICA1 │    │ REPLICA2 │
+                   │<span class="hl6"> NEW PRIMARY</span>│◄───│ (Slave)  │
+                   │ (Promoted)│    │ Re-pointed│
+                   └──────────┘    └──────────┘
+                        ▲
+    MaxScale:
+    ✦ Picks the most up-to-date replica
+    ✦ Promotes it to Primary (STOP SLAVE; RESET SLAVE ALL;)
+    ✦ Points other replicas to the new Primary
+    ✦ Updates routing — app traffic goes to new Primary
+    ✦ <span class="hl6">App doesn't know anything changed!</span>
+
+<span class="hl1">  STEP 4: Old Primary Comes Back</span>
+  ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │ OLD      │───►│ REPLICA1 │    │ REPLICA2 │
+  │<span class="hl2"> NOW SLAVE</span> │    │ PRIMARY  │◄───│ (Slave)  │
+  │(Rejoined)│    │          │    │          │
+  └──────────┘    └──────────┘    └──────────┘
+    MaxScale auto-rejoins it as a replica!</div>
+
+    <div class="example">
+      <h4>🔑 Key Configuration</h4>
+      <p><code>auto_failover=true</code> enables this. <code>auto_rejoin=true</code> automatically brings back a recovered server as a replica. The <code>failcount</code> parameter sets how many failed health checks before triggering failover (default: 5 checks × 2 sec interval = 10 seconds).</p>
+    </div>
+  </div>
+
+  <!-- Transaction Replay -->
+  <div class="card card-green">
+    <h3>🔁 Transaction Replay</h3>
+    <p>If a server fails <strong>during an active transaction</strong>, MaxScale can automatically <strong>replay that transaction</strong> on another server instead of returning an error to the app.</p>
+    
+    <div class="diagram"><span class="hl6">  Without Transaction Replay:</span>
+    App: BEGIN → INSERT → UPDATE → <span class="hl5">SERVER CRASH</span> → ❌ Error to App!
+    
+<span class="hl6">  With Transaction Replay (transaction_replay=true):</span>
+    App: BEGIN → INSERT → UPDATE → <span class="hl5">SERVER CRASH</span>
+    MaxScale: "I recorded this transaction, let me replay it..."
+    MaxScale: BEGIN → INSERT → UPDATE → COMMIT on new server → <span class="hl6">✅ Success to App!</span></div>
+  </div>
+
+  <!-- Database Firewall -->
+  <div class="card card-amber">
+    <h3>🛡️ Database Firewall (DbFwFilter)</h3>
+    <p>MaxScale can <strong>block dangerous queries</strong> before they reach your database. It's like a security guard checking every query.</p>
+    
+    <div class="grid">
+      <div class="grid-item">
+        <h4>What You Can Block</h4>
+        <ul>
+          <li><code>DROP DATABASE</code> commands</li>
+          <li><code>DELETE</code> without WHERE clause</li>
+          <li>Queries from specific IPs</li>
+          <li>Queries at certain times (e.g., no writes at night)</li>
+          <li>Queries returning too many rows</li>
+          <li>SQL injection patterns (regex matching)</li>
+        </ul>
+      </div>
+      <div class="grid-item">
+        <h4>Example Rule</h4>
+        <div class="code"><span class="cmt"># Block DROP commands</span>
+rule block_drops match regex <span class="str">'DROP\s+TABLE|DROP\s+DATABASE'</span>
+
+<span class="cmt"># Block DELETE without WHERE</span>
+rule no_wild_delete match regex <span class="str">'DELETE\s+FROM\s+\w+\s*$'</span>
+
+<span class="cmt"># Allow only SELECT for certain users</span>
+users %@% match any rules block_drops no_wild_delete</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Query Cache -->
+  <div class="card card-teal">
+    <h3>⚡ Query Result Cache</h3>
+    <p>MaxScale can <strong>cache SELECT results in memory</strong>. If the same query comes again within a set time, MaxScale returns the cached result <strong>without even touching the database</strong>.</p>
+    
+    <div class="diagram"><span class="hl2">  How Cache Works:</span>
+
+  <span class="hl3">First request:</span>  App → SELECT * FROM products → MaxScale → Database
+                                                        ↓
+                                               MaxScale <span class="hl2">caches result</span>
+                                                        ↓
+                                               Returns to App
+
+  <span class="hl6">Next identical request (within TTL):</span>
+                   App → SELECT * FROM products → MaxScale
+                                                    ↓
+                                          <span class="hl6">Returns cached result instantly!</span>
+                                          (Database is never touched)</div>
+  </div>
+
+  <!-- Connection Pooling -->
+  <div class="card card-purple">
+    <h3>🔗 Connection Pooling & Multiplexing</h3>
+    <p>Without MaxScale, if 1000 users connect to your app, that means 1000 connections to your database (expensive!). MaxScale <strong>shares and reuses</strong> backend connections — 1000 app connections might only need 50 database connections.</p>
+    
+    <div class="diagram"><span class="hl4">  Without MaxScale:</span>
+  1000 App Users → 1000 DB Connections → Database overwhelmed! 😱
+
+<span class="hl4">  With MaxScale Connection Pooling:</span>
+  1000 App Users → MaxScale → <span class="hl6">~50 shared DB Connections</span> → Database happy! 😊
+  
+  MaxScale reuses idle connections for new requests</div>
+  </div>
+
+  <!-- More Features Summary -->
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <h4>MaxGUI (Web Interface)</h4>
+      <p>A visual dashboard at port 8989 to monitor servers, services, sessions, and perform admin tasks with clicks instead of commands.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔐</div>
+      <h4>TLS/SSL Encryption</h4>
+      <p>Encrypts all traffic between app → MaxScale and MaxScale → databases. Protects data in transit from sniffing attacks.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📝</div>
+      <h4>Query Logging (QLA Filter)</h4>
+      <p>Logs every SQL query passing through MaxScale. Create audit trails for compliance, debug slow queries, or track who did what.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🌊</div>
+      <h4>Kafka Integration</h4>
+      <p>KafkaCDC router streams database changes to Apache Kafka for real-time analytics, event-driven architecture, or data pipelines.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🚦</div>
+      <h4>Query Throttling</h4>
+      <p>Limits how many queries a single session can execute per second. Prevents rogue applications or DDoS attacks from overwhelming your database.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔄</div>
+      <h4>Causal Reads</h4>
+      <p>After a write, ensures the next read returns updated data — even if routed to a replica. Uses GTID tracking for consistency.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MAXSCALE vs OTHERS ====== -->
+<div class="section">
+  <h2 class="sec-title">MaxScale vs Other Proxies</h2>
+  <p class="sec-sub">How MaxScale compares to ProxySQL, HAProxy, and MySQL Router</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>MaxScale</th>
+          <th>ProxySQL</th>
+          <th>HAProxy</th>
+          <th>MySQL Router</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>SQL Aware?</td>
+          <td style="color:var(--green);">✅ Yes (parses SQL)</td>
+          <td style="color:var(--green);">✅ Yes (parses SQL)</td>
+          <td style="color:var(--rose);">❌ No (TCP level)</td>
+          <td style="color:var(--amber);">⚠️ Partial</td>
+        </tr>
+        <tr>
+          <td>Read/Write Split</td>
+          <td style="color:var(--green);">✅ Built-in</td>
+          <td style="color:var(--green);">✅ Built-in (rules)</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--green);">✅ With Group Repl.</td>
+        </tr>
+        <tr>
+          <td>Auto Failover</td>
+          <td style="color:var(--green);">✅ Built-in</td>
+          <td style="color:var(--rose);">❌ Needs external tool</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--green);">✅ With InnoDB Cluster</td>
+        </tr>
+        <tr>
+          <td>Transaction Replay</td>
+          <td style="color:var(--green);">✅ Yes</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--rose);">❌ No</td>
+        </tr>
+        <tr>
+          <td>Database Firewall</td>
+          <td style="color:var(--green);">✅ Built-in</td>
+          <td style="color:var(--green);">✅ Query rules</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--rose);">❌ No</td>
+        </tr>
+        <tr>
+          <td>Query Cache</td>
+          <td style="color:var(--green);">✅ Built-in</td>
+          <td style="color:var(--green);">✅ Built-in</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--rose);">❌ No</td>
+        </tr>
+        <tr>
+          <td>Kafka Streaming</td>
+          <td style="color:var(--green);">✅ KafkaCDC Router</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--rose);">❌ No</td>
+          <td style="color:var(--rose);">❌ No</td>
+        </tr>
+        <tr>
+          <td>Web GUI</td>
+          <td style="color:var(--green);">✅ MaxGUI</td>
+          <td style="color:var(--green);">✅ Admin interface</td>
+          <td style="color:var(--green);">✅ Stats page</td>
+          <td style="color:var(--rose);">❌ No</td>
+        </tr>
+        <tr>
+          <td>Best With</td>
+          <td>MariaDB</td>
+          <td>MySQL / Percona</td>
+          <td>Any (TCP proxy)</td>
+          <td>MySQL InnoDB Cluster</td>
+        </tr>
+        <tr>
+          <td>License</td>
+          <td>BSL → GPL (v21.06)</td>
+          <td>GPL</td>
+          <td>GPL</td>
+          <td>GPL</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ====== REQUIREMENTS ====== -->
+<div class="section">
+  <h2 class="sec-title">Requirements Before You Start</h2>
+  <p class="sec-sub">What you need before installing MaxScale</p>
+
+  <div class="grid">
+    <div class="grid-item">
+      <h4>🖥️ MaxScale Server</h4>
+      <ul>
+        <li><strong>Separate server</strong> (recommended — don't install on DB server)</li>
+        <li>2+ CPU cores (4 recommended)</li>
+        <li>4 GB+ RAM (8 GB for caching)</li>
+        <li>Linux OS (Ubuntu 20.04+, CentOS 7+, Amazon Linux 2+)</li>
+        <li>Open ports: 3306 (service), 8989 (MaxGUI), 27017 (REST API)</li>
+      </ul>
+    </div>
+    <div class="grid-item">
+      <h4>🗄️ Backend Database Servers</h4>
+      <ul>
+        <li>MariaDB 10.4+ or MySQL 5.7+ (at least 2 servers)</li>
+        <li>Replication already set up (Master-Slave or Galera)</li>
+        <li>A dedicated MaxScale user with proper privileges</li>
+        <li>Network connectivity between MaxScale and all DB servers</li>
+      </ul>
+    </div>
+    <div class="grid-item">
+      <h4>📋 Database Architecture Example</h4>
+      <ul>
+        <li><strong>Server 1 (MaxScale):</strong> 192.168.1.10</li>
+        <li><strong>Server 2 (Primary/Master):</strong> 192.168.1.20</li>
+        <li><strong>Server 3 (Replica/Slave 1):</strong> 192.168.1.30</li>
+        <li><strong>Server 4 (Replica/Slave 2):</strong> 192.168.1.40</li>
+      </ul>
+    </div>
+    <div class="grid-item">
+      <h4>👤 Required DB User Privileges</h4>
+      <ul>
+        <li>SELECT on mysql.user, mysql.db, mysql.tables_priv</li>
+        <li>SELECT on mysql.roles_mapping</li>
+        <li>SHOW DATABASES ON *.*</li>
+        <li>REPLICATION CLIENT ON *.*</li>
+        <li>SUPER ON *.* (for failover)</li>
+        <li>REPLICATION SLAVE ADMIN (MariaDB 10.5+)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ====== IMPLEMENTATION ====== -->
+<div class="section">
+  <h2 class="sec-title">Step-by-Step Implementation</h2>
+  <p class="sec-sub">Complete installation and configuration on Amazon Linux, CentOS & Ubuntu</p>
+
+  <!-- STEP 1: Create MaxScale User on Database -->
+  <div class="card card-accent">
+    <h3>Step 1: Create MaxScale User on Your Database (All OS — Run on Primary DB)</h3>
+    <p>Before installing MaxScale, create a user on your PRIMARY database server that MaxScale will use to connect, monitor, and manage failover.</p>
+    
+    <div class="code"><span class="cmt">-- Connect to your PRIMARY MariaDB/MySQL server</span>
+<span class="cmd">mysql -u root -p</span>
+
+<span class="cmt">-- Create the MaxScale monitoring & routing user</span>
+<span class="kw">CREATE USER</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span> <span class="kw">IDENTIFIED BY</span> <span class="str">'SecurePass123!'</span>;
+
+<span class="cmt">-- Grant monitoring permissions</span>
+<span class="kw">GRANT SELECT ON</span> mysql.user <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+<span class="kw">GRANT SELECT ON</span> mysql.db <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+<span class="kw">GRANT SELECT ON</span> mysql.tables_priv <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+<span class="kw">GRANT SELECT ON</span> mysql.roles_mapping <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+<span class="kw">GRANT SHOW DATABASES ON</span> *.* <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+
+<span class="cmt">-- Grant replication monitoring</span>
+<span class="kw">GRANT REPLICATION CLIENT ON</span> *.* <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+
+<span class="cmt">-- Grant failover permissions (IMPORTANT for auto-failover)</span>
+<span class="kw">GRANT SUPER ON</span> *.* <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+<span class="kw">GRANT RELOAD ON</span> *.* <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+
+<span class="cmt">-- For MariaDB 10.5+ also grant:</span>
+<span class="kw">GRANT REPLICATION SLAVE ADMIN ON</span> *.* <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+<span class="kw">GRANT REPLICA MONITOR ON</span> *.* <span class="kw">TO</span> <span class="str">'maxscale_user'</span>@<span class="str">'192.168.1.10'</span>;
+
+<span class="kw">FLUSH PRIVILEGES;</span></div>
+
+    <div class="warning">
+      <h4>⚠️ Replace the IP</h4>
+      <p>Replace <code>192.168.1.10</code> with your MaxScale server's actual IP. Or use <code>'%'</code> to allow from any IP (less secure). For Galera Cluster, this user will replicate to all nodes automatically.</p>
+    </div>
+  </div>
+
+  <!-- STEP 2: Install MaxScale (OS-Specific) -->
+  <div class="card card-teal">
+    <h3>Step 2: Install MaxScale (OS-Specific)</h3>
+    <p>Click your operating system below for exact commands:</p>
+
+    <div class="os-tabs">
+      <div class="os-tab amazon active" id="tab-amazon" onclick="showOS('tab-amazon','content-amazon')">🟠 Amazon Linux 2/2023</div>
+      <div class="os-tab centos" id="tab-centos" onclick="showOS('tab-centos','content-centos')">🟣 CentOS 7/8/9</div>
+      <div class="os-tab ubuntu" id="tab-ubuntu" onclick="showOS('tab-ubuntu','content-ubuntu')">🟡 Ubuntu 20.04/22.04/24.04</div>
+    </div>
+
+    <!-- AMAZON LINUX -->
+    <div class="os-content active" id="content-amazon">
+      <h4 style="color:var(--orange); margin-bottom:16px;">Amazon Linux 2 / Amazon Linux 2023</h4>
+      
+      <div class="step-row">
+        <span class="step-num">1</span>
+        <div class="step-content">
+          <h4>Update the system</h4>
+          <div class="code"><span class="cmd">sudo yum update -y</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">2</span>
+        <div class="step-content">
+          <h4>Add MariaDB Repository</h4>
+          <div class="code"><span class="cmt"># Download and run the MariaDB repo setup script</span>
+<span class="cmd">curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash</span>
+
+<span class="cmt"># For Amazon Linux 2 (uses RHEL 7 repos):</span>
+<span class="cmt"># The script auto-detects, but if it fails:</span>
+<span class="cmd">curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup \</span>
+  <span class="cmd">| sudo bash -s -- --os-type=rhel --os-version=7</span>
+
+<span class="cmt"># For Amazon Linux 2023 (uses RHEL 9 repos):</span>
+<span class="cmd">curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup \</span>
+  <span class="cmd">| sudo bash -s -- --os-type=rhel --os-version=9</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">3</span>
+        <div class="step-content">
+          <h4>Install MaxScale</h4>
+          <div class="code"><span class="cmt"># Amazon Linux 2</span>
+<span class="cmd">sudo yum install maxscale -y</span>
+
+<span class="cmt"># Amazon Linux 2023 (uses dnf)</span>
+<span class="cmd">sudo dnf install maxscale -y</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">4</span>
+        <div class="step-content">
+          <h4>Verify Installation</h4>
+          <div class="code"><span class="cmd">maxscale --version</span>
+<span class="cmt"># Output: MaxScale 24.02.x or similar</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">5</span>
+        <div class="step-content">
+          <h4>Open Firewall Ports (Security Group on AWS)</h4>
+          <div class="code"><span class="cmt"># In AWS Console → EC2 → Security Groups → Inbound Rules:</span>
+<span class="cmt"># Port 3306 (MySQL/MaxScale service) — from app servers</span>
+<span class="cmt"># Port 3307 (Read-Only service, if configured) — from app servers</span>
+<span class="cmt"># Port 8989 (MaxGUI web interface) — from your IP only</span>
+
+<span class="cmt"># If using iptables locally:</span>
+<span class="cmd">sudo iptables -I INPUT -p tcp --dport 3306 -j ACCEPT</span>
+<span class="cmd">sudo iptables -I INPUT -p tcp --dport 8989 -j ACCEPT</span></div>
+        </div>
+      </div>
+
+      <div class="warning">
+        <h4>📌 Amazon Linux Note</h4>
+        <p>Amazon Linux 2 is based on RHEL 7, and Amazon Linux 2023 is based on RHEL 9 / Fedora. The MariaDB repo setup script may not always auto-detect correctly, so use the <code>--os-type</code> and <code>--os-version</code> flags to force the correct repos.</p>
+      </div>
+    </div>
+
+    <!-- CENTOS -->
+    <div class="os-content" id="content-centos">
+      <h4 style="color:var(--purple); margin-bottom:16px;">CentOS 7 / CentOS Stream 8 / CentOS Stream 9</h4>
+
+      <div class="step-row">
+        <span class="step-num">1</span>
+        <div class="step-content">
+          <h4>Update the system</h4>
+          <div class="code"><span class="cmd">sudo yum update -y</span>  <span class="cmt"># CentOS 7</span>
+<span class="cmd">sudo dnf update -y</span>  <span class="cmt"># CentOS 8/9</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">2</span>
+        <div class="step-content">
+          <h4>Add MariaDB Repository</h4>
+          <div class="code"><span class="cmt"># Method 1: Auto-setup script (Recommended)</span>
+<span class="cmd">curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash</span>
+
+<span class="cmt"># Method 2: Manual repo file for CentOS 7</span>
+<span class="cmd">sudo tee /etc/yum.repos.d/mariadb-maxscale.repo &lt;&lt;EOF</span>
+<span class="str">[mariadb-maxscale]</span>
+<span class="str">name=MariaDB MaxScale</span>
+<span class="str">baseurl=https://dlm.mariadb.com/repo/maxscale/latest/yum/centos/7/x86_64</span>
+<span class="str">gpgkey=https://supplychain.mariadb.com/MariaDB-Server-GPG-KEY</span>
+<span class="str">gpgcheck=1</span>
+<span class="str">enabled=1</span>
+<span class="cmd">EOF</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">3</span>
+        <div class="step-content">
+          <h4>Install MaxScale</h4>
+          <div class="code"><span class="cmt"># CentOS 7</span>
+<span class="cmd">sudo yum install maxscale -y</span>
+
+<span class="cmt"># CentOS 8/9</span>
+<span class="cmd">sudo dnf install maxscale -y</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">4</span>
+        <div class="step-content">
+          <h4>Open Firewall</h4>
+          <div class="code"><span class="cmd">sudo firewall-cmd --permanent --add-port=3306/tcp</span>
+<span class="cmd">sudo firewall-cmd --permanent --add-port=3307/tcp</span>
+<span class="cmd">sudo firewall-cmd --permanent --add-port=8989/tcp</span>
+<span class="cmd">sudo firewall-cmd --reload</span>
+
+<span class="cmt"># Verify</span>
+<span class="cmd">sudo firewall-cmd --list-ports</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">5</span>
+        <div class="step-content">
+          <h4>Verify Installation</h4>
+          <div class="code"><span class="cmd">maxscale --version</span>
+<span class="cmd">rpm -qi maxscale</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UBUNTU -->
+    <div class="os-content" id="content-ubuntu">
+      <h4 style="color:var(--amber); margin-bottom:16px;">Ubuntu 20.04 (Focal) / 22.04 (Jammy) / 24.04 (Noble)</h4>
+
+      <div class="step-row">
+        <span class="step-num">1</span>
+        <div class="step-content">
+          <h4>Update the system</h4>
+          <div class="code"><span class="cmd">sudo apt update && sudo apt upgrade -y</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">2</span>
+        <div class="step-content">
+          <h4>Add MariaDB Repository</h4>
+          <div class="code"><span class="cmt"># Method 1: Auto-setup script (Recommended)</span>
+<span class="cmd">curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash</span>
+
+<span class="cmt"># Method 2: Manual (Ubuntu 22.04 example)</span>
+<span class="cmd">sudo apt install apt-transport-https curl -y</span>
+
+<span class="cmt"># Import MariaDB GPG key</span>
+<span class="cmd">sudo mkdir -p /etc/apt/keyrings</span>
+<span class="cmd">curl -fsSL https://supplychain.mariadb.com/MariaDB-Server-GPG-KEY \</span>
+  <span class="cmd">| sudo gpg --dearmor -o /etc/apt/keyrings/mariadb-keyring.gpg</span>
+
+<span class="cmt"># Add repository</span>
+<span class="cmd">echo "deb [signed-by=/etc/apt/keyrings/mariadb-keyring.gpg] \</span>
+  <span class="cmd">https://dlm.mariadb.com/repo/maxscale/latest/apt \</span>
+  <span class="cmd">jammy main" | sudo tee /etc/apt/sources.list.d/maxscale.list</span>
+
+<span class="cmd">sudo apt update</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">3</span>
+        <div class="step-content">
+          <h4>Install MaxScale</h4>
+          <div class="code"><span class="cmd">sudo apt install maxscale -y</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">4</span>
+        <div class="step-content">
+          <h4>Open Firewall (UFW)</h4>
+          <div class="code"><span class="cmd">sudo ufw allow 3306/tcp</span>
+<span class="cmd">sudo ufw allow 3307/tcp</span>
+<span class="cmd">sudo ufw allow 8989/tcp</span>
+<span class="cmd">sudo ufw reload</span>
+<span class="cmd">sudo ufw status</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <span class="step-num">5</span>
+        <div class="step-content">
+          <h4>Verify Installation</h4>
+          <div class="code"><span class="cmd">maxscale --version</span>
+<span class="cmd">dpkg -l | grep maxscale</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Configure MaxScale -->
+  <div class="card card-purple">
+    <h3>Step 3: Configure MaxScale (Same for All OS)</h3>
+    <p>The main configuration file is <code>/etc/maxscale.cnf</code>. Below is a <strong>complete production-ready configuration</strong> with Read/Write Splitting and Automatic Failover:</p>
+    
+    <div class="code"><span class="cmt"># ═══════════════════════════════════════════════════════</span>
+<span class="cmt"># /etc/maxscale.cnf — Complete MaxScale Configuration</span>
+<span class="cmt"># ═══════════════════════════════════════════════════════</span>
+
+<span class="cmt"># ─── GLOBAL SETTINGS ───</span>
+<span class="kw">[maxscale]</span>
+<span class="str">threads</span>         = auto           <span class="cmt"># Auto-detect CPU cores</span>
+<span class="str">log_augmentation</span> = 1              <span class="cmt"># Add function names to logs</span>
+<span class="str">ms_timestamp</span>     = 1              <span class="cmt"># Millisecond timestamps in logs</span>
+<span class="str">syslog</span>           = 1              <span class="cmt"># Send logs to syslog</span>
+<span class="str">admin_host</span>       = 0.0.0.0        <span class="cmt"># MaxGUI listens on all IPs</span>
+<span class="str">admin_port</span>       = 8989            <span class="cmt"># MaxGUI port</span>
+<span class="str">admin_secure_gui</span> = false          <span class="cmt"># Set true for HTTPS in production</span>
+
+<span class="cmt"># ─── DEFINE BACKEND SERVERS ───</span>
+<span class="kw">[primary-server]</span>
+<span class="str">type</span>     = server
+<span class="str">address</span>  = 192.168.1.20           <span class="cmt"># ← Your Primary/Master IP</span>
+<span class="str">port</span>     = 3306
+<span class="str">protocol</span> = MariaDBBackend
+
+<span class="kw">[replica-1]</span>
+<span class="str">type</span>     = server
+<span class="str">address</span>  = 192.168.1.30           <span class="cmt"># ← Your Replica/Slave 1 IP</span>
+<span class="str">port</span>     = 3306
+<span class="str">protocol</span> = MariaDBBackend
+
+<span class="kw">[replica-2]</span>
+<span class="str">type</span>     = server
+<span class="str">address</span>  = 192.168.1.40           <span class="cmt"># ← Your Replica/Slave 2 IP</span>
+<span class="str">port</span>     = 3306
+<span class="str">protocol</span> = MariaDBBackend
+
+<span class="cmt"># ─── MONITOR (Health Checker + Failover Engine) ───</span>
+<span class="kw">[MariaDB-Monitor]</span>
+<span class="str">type</span>                 = monitor
+<span class="str">module</span>               = mariadbmon
+<span class="str">servers</span>              = primary-server, replica-1, replica-2
+<span class="str">user</span>                 = maxscale_user
+<span class="str">password</span>             = SecurePass123!
+<span class="str">monitor_interval</span>     = 2000ms         <span class="cmt"># Check every 2 seconds</span>
+<span class="str">auto_failover</span>        = true           <span class="cmt"># ✅ Enable automatic failover</span>
+<span class="str">auto_rejoin</span>          = true           <span class="cmt"># ✅ Auto-rejoin recovered servers</span>
+<span class="str">failcount</span>            = 5              <span class="cmt"># Fail 5 checks before failover</span>
+<span class="str">replication_user</span>     = repl_user      <span class="cmt"># User for replication changes</span>
+<span class="str">replication_password</span> = ReplPass123!
+
+<span class="cmt"># ─── READ-WRITE SPLIT SERVICE ───</span>
+<span class="kw">[Read-Write-Service]</span>
+<span class="str">type</span>                  = service
+<span class="str">router</span>                = readwritesplit
+<span class="str">servers</span>               = primary-server, replica-1, replica-2
+<span class="str">user</span>                  = maxscale_user
+<span class="str">password</span>              = SecurePass123!
+<span class="str">master_accept_reads</span>   = true          <span class="cmt"># Primary also handles reads if needed</span>
+<span class="str">transaction_replay</span>    = true          <span class="cmt"># ✅ Replay failed transactions</span>
+<span class="str">transaction_replay_max_size</span> = 1Mi     <span class="cmt"># Max transaction size to replay</span>
+<span class="str">causal_reads</span>          = true          <span class="cmt"># ✅ Read-your-own-writes consistency</span>
+<span class="str">causal_reads_timeout</span>  = 10s
+
+<span class="cmt"># ─── READ-ONLY SERVICE (Optional — separate port for reads) ───</span>
+<span class="kw">[Read-Only-Service]</span>
+<span class="str">type</span>            = service
+<span class="str">router</span>          = readconnroute
+<span class="str">servers</span>         = replica-1, replica-2
+<span class="str">user</span>            = maxscale_user
+<span class="str">password</span>        = SecurePass123!
+<span class="str">router_options</span>  = slave             <span class="cmt"># Only route to slaves</span>
+
+<span class="cmt"># ─── LISTENERS (Where apps connect) ───</span>
+<span class="kw">[Read-Write-Listener]</span>
+<span class="str">type</span>     = listener
+<span class="str">service</span>  = Read-Write-Service
+<span class="str">protocol</span> = MariaDBClient
+<span class="str">port</span>     = 3306                    <span class="cmt"># Apps connect here (main port)</span>
+
+<span class="kw">[Read-Only-Listener]</span>
+<span class="str">type</span>     = listener
+<span class="str">service</span>  = Read-Only-Service
+<span class="str">protocol</span> = MariaDBClient
+<span class="str">port</span>     = 3307                    <span class="cmt"># Optional read-only port</span></div>
+
+    <div class="warning">
+      <h4>🔐 Encrypt Passwords!</h4>
+      <p>In production, never store passwords in plain text. Use MaxScale's encryption:</p>
+    </div>
+    <div class="code"><span class="cmt"># Generate encryption keys</span>
+<span class="cmd">sudo maxkeys /var/lib/maxscale/</span>
+<span class="cmd">sudo chown maxscale:maxscale /var/lib/maxscale/.secrets</span>
+
+<span class="cmt"># Encrypt your password</span>
+<span class="cmd">maxpasswd /var/lib/maxscale/ SecurePass123!</span>
+<span class="cmt"># Output: 96F99AA1315BDC3604B006F427DD9484</span>
+
+<span class="cmt"># Use the encrypted string in maxscale.cnf:</span>
+<span class="str">password</span> = 96F99AA1315BDC3604B006F427DD9484</div>
+  </div>
+
+  <!-- STEP 4: Start MaxScale -->
+  <div class="card card-green">
+    <h3>Step 4: Start & Enable MaxScale (All OS)</h3>
+    
+    <div class="code"><span class="cmt"># Start MaxScale</span>
+<span class="cmd">sudo systemctl start maxscale</span>
+
+<span class="cmt"># Enable on boot</span>
+<span class="cmd">sudo systemctl enable maxscale</span>
+
+<span class="cmt"># Check status</span>
+<span class="cmd">sudo systemctl status maxscale</span>
+
+<span class="cmt"># View logs (troubleshooting)</span>
+<span class="cmd">sudo journalctl -u maxscale -f</span>
+<span class="cmt"># Or: sudo tail -f /var/log/maxscale/maxscale.log</span></div>
+  </div>
+
+  <!-- STEP 5: Verify -->
+  <div class="card card-amber">
+    <h3>Step 5: Verify Everything is Working</h3>
+    
+    <div class="code"><span class="cmt"># ─── Check server status with maxctrl ───</span>
+<span class="cmd">sudo maxctrl list servers</span>
+<span class="cmt"># Expected output:</span>
+<span class="cmt"># ┌────────────────┬───────────────┬──────┬─────────────────┬─────────────┐</span>
+<span class="cmt"># │ Server         │ Address       │ Port │ Connections     │ State       │</span>
+<span class="cmt"># ├────────────────┼───────────────┼──────┼─────────────────┼─────────────┤</span>
+<span class="cmt"># │ primary-server │ 192.168.1.20  │ 3306 │ 0               │ Master,Running│</span>
+<span class="cmt"># │ replica-1      │ 192.168.1.30  │ 3306 │ 0               │ Slave,Running │</span>
+<span class="cmt"># │ replica-2      │ 192.168.1.40  │ 3306 │ 0               │ Slave,Running │</span>
+<span class="cmt"># └────────────────┴───────────────┴──────┴─────────────────┴─────────────┘</span>
+
+<span class="cmt"># ─── Check services ───</span>
+<span class="cmd">sudo maxctrl list services</span>
+
+<span class="cmt"># ─── Check monitors ───</span>
+<span class="cmd">sudo maxctrl list monitors</span>
+
+<span class="cmt"># ─── Check listeners ───</span>
+<span class="cmd">sudo maxctrl list listeners Read-Write-Service</span>
+
+<span class="cmt"># ─── Test connection through MaxScale ───</span>
+<span class="cmd">mysql -h 192.168.1.10 -P 3306 -u your_app_user -p</span>
+<span class="cmt"># You should connect and see MaxScale routing queries!</span>
+
+<span class="cmt"># ─── Open MaxGUI in browser ───</span>
+<span class="cmt"># Visit: http://192.168.1.10:8989</span>
+<span class="cmt"># Default login: admin / mariadb</span></div>
+  </div>
+
+  <!-- STEP 6: Common maxctrl Commands -->
+  <div class="card card-rose">
+    <h3>Step 6: Essential MaxCtrl Commands (Cheat Sheet)</h3>
+    
+    <div class="code"><span class="cmt"># ═══ MONITORING COMMANDS ═══</span>
+<span class="cmd">sudo maxctrl list servers</span>          <span class="cmt"># See all server states</span>
+<span class="cmd">sudo maxctrl list services</span>         <span class="cmt"># See all services</span>
+<span class="cmd">sudo maxctrl list sessions</span>         <span class="cmt"># See active client connections</span>
+<span class="cmd">sudo maxctrl list filters</span>          <span class="cmt"># See active filters</span>
+<span class="cmd">sudo maxctrl show server primary-server</span>  <span class="cmt"># Detailed server info</span>
+
+<span class="cmt"># ═══ MAINTENANCE COMMANDS ═══</span>
+<span class="cmd">sudo maxctrl set server replica-1 maintenance</span>    <span class="cmt"># Put in maintenance mode</span>
+<span class="cmd">sudo maxctrl clear server replica-1 maintenance</span>  <span class="cmt"># Remove from maintenance</span>
+
+<span class="cmt"># ═══ MANUAL FAILOVER (if auto is off) ═══</span>
+<span class="cmd">sudo maxctrl call command mariadbmon failover MariaDB-Monitor</span>
+
+<span class="cmt"># ═══ MANUAL SWITCHOVER (planned, safe) ═══</span>
+<span class="cmd">sudo maxctrl call command mariadbmon switchover MariaDB-Monitor</span>
+
+<span class="cmt"># ═══ REJOIN a recovered server ═══</span>
+<span class="cmd">sudo maxctrl call command mariadbmon rejoin MariaDB-Monitor</span>
+
+<span class="cmt"># ═══ RELOAD CONFIG (no restart needed) ═══</span>
+<span class="cmd">sudo maxctrl alter maxscale threads 8</span>   <span class="cmt"># Change on the fly</span>
+
+<span class="cmt"># ═══ ROTATE LOGS ═══</span>
+<span class="cmd">sudo maxctrl call command maxscale rotate logs</span></div>
+  </div>
+</div>
+
+<!-- ====== FOR GALERA CLUSTER ====== -->
+<div class="section">
+  <h2 class="sec-title">Bonus: MaxScale Configuration for Galera Cluster</h2>
+  <p class="sec-sub">If you're using Galera instead of Master-Slave replication</p>
+
+  <div class="card card-orange">
+    <p>For Galera, use the <code>galeramon</code> monitor module instead of <code>mariadbmon</code>, and use <code>readconnroute</code> with <code>synced</code> option:</p>
+
+    <div class="code"><span class="cmt"># ─── Galera Monitor ───</span>
+<span class="kw">[Galera-Monitor]</span>
+<span class="str">type</span>             = monitor
+<span class="str">module</span>           = galeramon
+<span class="str">servers</span>          = galera-1, galera-2, galera-3
+<span class="str">user</span>             = maxscale_user
+<span class="str">password</span>         = SecurePass123!
+<span class="str">monitor_interval</span> = 2000ms
+<span class="str">disable_master_failback</span> = false   <span class="cmt"># Allow master to move between nodes</span>
+
+<span class="cmt"># ─── Galera Service (all nodes are equal) ───</span>
+<span class="kw">[Galera-RW-Service]</span>
+<span class="str">type</span>            = service
+<span class="str">router</span>          = readwritesplit
+<span class="str">servers</span>         = galera-1, galera-2, galera-3
+<span class="str">user</span>            = maxscale_user
+<span class="str">password</span>        = SecurePass123!
+
+<span class="cmt"># OR use ReadConnRoute for round-robin:</span>
+<span class="kw">[Galera-RR-Service]</span>
+<span class="str">type</span>            = service
+<span class="str">router</span>          = readconnroute
+<span class="str">router_options</span>  = synced         <span class="cmt"># Only send to synced nodes</span>
+<span class="str">servers</span>         = galera-1, galera-2, galera-3
+<span class="str">user</span>            = maxscale_user
+<span class="str">password</span>        = SecurePass123!</div>
+  </div>
+</div>
+
+<!-- ====== COMPLETE FLOW ====== -->
+<div class="section">
+  <h2 class="sec-title">Complete Data Flow Summary</h2>
+  
+  <div class="flow-horizontal">
+    <div class="flow-box">
+      <h5>📱 Your App</h5>
+      <p>Connects to MaxScale IP:3306</p>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box primary">
+      <h5>🔀 MaxScale</h5>
+      <p>Parses SQL, routes query</p>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box">
+      <h5>📝 Writes</h5>
+      <p>→ Primary Server</p>
+    </div>
+  </div>
+  
+  <div class="flow-horizontal" style="margin-top:-10px;">
+    <div class="flow-box" style="visibility:hidden;"><h5>hidden</h5></div>
+    <span class="flow-arrow" style="visibility:hidden;">→</span>
+    <div class="flow-box primary">
+      <h5>🔀 MaxScale</h5>
+      <p>(same proxy)</p>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box">
+      <h5>📖 Reads</h5>
+      <p>→ Replica 1 or 2 (load balanced)</p>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center; padding:40px 0 60px; color:var(--text-dim); font-size:0.88rem;">
+  MariaDB MaxScale In-Depth Guide · Complete Implementation Reference
+</div>
+
+</div><!-- /container -->
+</body>
+</html>
