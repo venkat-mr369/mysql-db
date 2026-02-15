@@ -13,11 +13,11 @@ This document describes the complete process for setting up MySQL replication be
 │                     MySQL REPLICATION TOPOLOGY                          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│    ┌──────────────────┐              ┌──────────────────┐              │
-│    │   PRIMARY        │              │   SECONDARY      │              │
-│    │   192.168.1.1    │ ──────────── │   192.168.2.1    │              │
-│    │   Port: 3301     │  Replication │   Port: 3301     │              │
-│    └──────────────────┘              └──────────────────┘              │
+│    ┌──────────────────┐              ┌──────────────────┐               │
+│    │   PRIMARY        │              │   SECONDARY      │               │
+│    │   192.168.1.1    │ ──────────── │   192.168.2.1    │               │
+│    │   Port: 3301     │  Replication │   Port: 3301     │               │
+│    └──────────────────┘              └──────────────────┘               │
 │                                                                         │
 │    • Receives writes                 • Read replicas                    │
 │    • Source of truth                 • Disaster recovery                │
