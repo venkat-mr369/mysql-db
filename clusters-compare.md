@@ -14,14 +14,14 @@ MySQL Replication is the **simplest and oldest** way to copy data from one MySQL
 
 ```
                     ┌─────────────────┐
-                    │   MASTER (Source)│
-                    │  Read + Write    │
+                    │  MASTER (Source)│
+                    │  Read + Write   │
                     └────────┬────────┘
                              │
               Binary Log (binlog) streams changes
                              │
            ┌─────────────────┼─────────────────┐
-           ▼                 ▼                  ▼
+           ▼                 ▼                 ▼
     ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
     │  SLAVE #1    │  │  SLAVE #2    │  │  SLAVE #3    │
     │  Read Only   │  │  Read Only   │  │  Read Only   │
